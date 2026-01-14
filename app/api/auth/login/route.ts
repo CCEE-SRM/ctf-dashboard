@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
         // 3. Generate Custom JWT
         const token = signJwt({
-            userId: user.id,
+            userId: String(user.id),
             email: user.email,
             role: user.role,
         });

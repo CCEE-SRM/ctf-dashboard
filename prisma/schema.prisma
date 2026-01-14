@@ -6,34 +6,34 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 model User {
-  id         Int     @id @default(autoincrement())
+  id         String  @id @default(uuid())
   email      String  @unique
   name       String?
   profileUrl String?
   role       String  @default("USER")
+  points     Int     @default(0)
 
   // Relation: User belongs to a Team
-  teamId Int?
-  team   Team? @relation("TeamMembers", fields: [teamId], references: [id])
+  teamId String?
+  team   Team?   @relation("TeamMembers", fields: [teamId], references: [id])
 
   // Relation: User leads a Team
   ledTeam Team? @relation("TeamLeader")
 }
 
 model Team {
-  id   Int    @id @default(autoincrement())
-  name String
+  id     String @id @default(uuid())
+  name   String
+  points Int    @default(0)
 
   // Relation: Team has multiple members
   members User[] @relation("TeamMembers")
 
   // Relation: Team has one leader
-  leaderId Int  @unique
-  leader   User @relation("TeamLeader", fields: [leaderId], references: [id])
+  leaderId String @unique
+  leader   User   @relation("TeamLeader", fields: [leaderId], references: [id])
 }

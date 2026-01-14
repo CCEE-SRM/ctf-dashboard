@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_do_not_use_in_production';
 
 interface JwtPayload {
-    userId: number;
+    userId: string;
     email: string;
     role: string;
 }
