@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+
+  // Relation: User belongs to a Team
+  teamId Int?
+  team   Team? @relation("TeamMembers", fields: [teamId], references: [id])
+
+  // Relation: User leads a Team
+  ledTeam Team? @relation("TeamLeader")
+}
+
+model Team {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  // Relation: Team has multiple members
+  members User[] @relation("TeamMembers")
+
+  // Relation: Team has one leader
+  leaderId Int  @unique
+  leader   User @relation("TeamLeader", fields: [leaderId], references: [id])
+}
