@@ -37,7 +37,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     // Sync user with database
+    const [syncedUid, setSyncedUid] = useState<string | null>(null);
+
     const syncUserToDb = async (firebaseUser: User) => {
+        // Prevent re-syncing the same user if we already have data
+        if (syncedUid === firebaseUser.uid && dbUser) {
+            return;
+        }
+
         try {
             const idToken = await firebaseUser.getIdToken();
             const response = await fetch('/api/auth/login', {
@@ -54,6 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 // Optionally store data.token (JWT) here
                 console.log("App Token:", data.token);
                 setToken(data.token);
+                setSyncedUid(firebaseUser.uid);
             }
         } catch (error) {
             console.error("Failed to sync user to DB", error);
@@ -67,6 +75,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 await syncUserToDb(currentUser);
             } else {
                 setDbUser(null);
+                setToken(null);
+                setSyncedUid(null);
             }
             setLoading(false);
         });
