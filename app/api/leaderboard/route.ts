@@ -5,19 +5,32 @@ export const dynamic = 'force-dynamic'; // Ensure this isn't cached statically a
 
 export async function GET() {
     try {
-        const teams = await prisma.team.findMany({
+        const leaderboardEntries = await prisma.leaderboard.findMany({
             include: {
-                leader: {
-                    select: { name: true, email: true, profileUrl: true }
-                },
-                members: {
-                    select: { name: true, points: true, email: true, profileUrl: true }
+                team: {
+                    select: {
+                        id: true,
+                        name: true,
+                        leader: {
+                            select: { name: true, email: true, profileUrl: true }
+                        }
+                    }
                 }
             },
-            orderBy: {
-                points: 'desc'
-            }
+            orderBy: [
+                { points: 'desc' },
+                { lastSolveAt: 'asc' }
+            ]
         });
+
+        // Map to the expected frontend structure
+        const teams = leaderboardEntries.map(entry => ({
+            id: entry.team.id,
+            name: entry.team.name,
+            points: entry.points,
+            leader: entry.team.leader,
+            members: entry.memberDetails
+        }));
 
         return NextResponse.json(teams);
     } catch (error) {

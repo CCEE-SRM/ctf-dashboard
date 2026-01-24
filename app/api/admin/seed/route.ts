@@ -75,6 +75,25 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                     members: {
                         connect: allMemberEmails.map(email => ({ email }))
                     }
+                },
+                include: {
+                    members: {
+                        select: { name: true, profileUrl: true, points: true, email: true }
+                    }
+                }
+            });
+
+            // Sync with Leaderboard to ensure they appear on the board
+            await prisma.leaderboard.upsert({
+                where: { teamId: team.id },
+                create: {
+                    teamId: team.id,
+                    points: team.points,
+                    memberDetails: team.members as any // Snapshot of initial members
+                },
+                update: {
+                    // Update member details in case they changed during seed
+                    memberDetails: team.members as any
                 }
             });
 

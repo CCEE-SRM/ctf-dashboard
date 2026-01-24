@@ -38,6 +38,7 @@ model Team {
   leaderId    String       @unique
   leader      User         @relation("TeamLeader", fields: [leaderId], references: [id])
   submissions Submission[]
+  leaderboard Leaderboard?
 }
 
 model Challenge {
@@ -68,4 +69,14 @@ model Submission {
 
   // Unique hash to prevent duplicate submissions per team (or user if solo)
   submissionFingerprint String @unique
+}
+
+model Leaderboard {
+  id            String   @id @default(uuid())
+  teamId        String   @unique
+  team          Team     @relation(fields: [teamId], references: [id])
+  points        Int      @default(0)
+  lastSolveAt   DateTime @default(now())
+  memberDetails Json // Stores snapshot of members: [{ name, profileUrl, points, email }]
+  updatedAt     DateTime @updatedAt
 }

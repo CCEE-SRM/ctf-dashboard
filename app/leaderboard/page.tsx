@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface Member {
     name: string | null;
@@ -43,9 +44,26 @@ export default function LeaderboardPage() {
 
         fetchLeaderboard();
 
-        const interval = setInterval(fetchLeaderboard, 5000); // Poll every 5 seconds
+        // Subscribe to real-time changes
+        const channel = supabase
+            .channel('leaderboard-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+                    schema: 'public',
+                    table: 'Leaderboard'
+                },
+                (payload: any) => {
+                    console.log('Real-time update received:', payload);
+                    fetchLeaderboard(); // Re-fetch to ensure correct sorting and full data
+                }
+            )
+            .subscribe();
 
-        return () => clearInterval(interval);
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const toggleTeam = (teamId: string) => {

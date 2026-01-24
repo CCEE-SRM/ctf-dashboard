@@ -91,11 +91,33 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
             });
 
             // Update Team Points if user is in a team
+            // Update Team Points and Leaderboard if user is in a team
             if (teamId) {
-                await tx.team.update({
+                const updatedTeam = await tx.team.update({
                     where: { id: teamId },
                     data: {
                         points: { increment: challenge.points }
+                    },
+                    include: {
+                        members: {
+                            select: { name: true, profileUrl: true, points: true, email: true }
+                        }
+                    }
+                });
+
+                // Upsert Leaderboard with new points, timestamp, and member snapshot
+                await tx.leaderboard.upsert({
+                    where: { teamId },
+                    create: {
+                        teamId,
+                        points: updatedTeam.points,
+                        lastSolveAt: new Date(),
+                        memberDetails: updatedTeam.members as any // Cast to any for Json compatibility if needed, or Prisma handles object array
+                    },
+                    update: {
+                        points: updatedTeam.points,
+                        lastSolveAt: new Date(),
+                        memberDetails: updatedTeam.members as any
                     }
                 });
             }
