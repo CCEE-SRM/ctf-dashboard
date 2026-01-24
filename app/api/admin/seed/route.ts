@@ -10,7 +10,6 @@ interface SeedMember {
 
 interface SeedTeam {
     name: string;
-    points: number;
     members: SeedMember[];
     leaderEmail: string;
 }
@@ -66,14 +65,12 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                 where: { leaderId: leaderRecord.id },
                 update: {
                     name: teamData.name,
-                    points: teamData.points,
                     members: {
                         connect: allMemberEmails.map(email => ({ email }))
                     }
                 },
                 create: {
                     name: teamData.name,
-                    points: teamData.points,
                     leader: { connect: { id: leaderRecord.id } },
                     members: {
                         connect: allMemberEmails.map(email => ({ email }))

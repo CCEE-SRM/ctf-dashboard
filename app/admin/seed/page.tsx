@@ -115,10 +115,8 @@ export default function AdminSeedPage() {
                                 id="json-input"
                                 rows={15}
                                 className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-xl p-4 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-y"
-                                placeholder='[
-  {
+                                placeholder='  {
     "name": "Team Alpha",
-    "points": 100,
     "leaderEmail": "leader@example.com",
     "members": [
       { "email": "member1@example.com", "name": "Member One" }
