@@ -8,10 +8,10 @@ export async function GET() {
         const teams = await prisma.team.findMany({
             include: {
                 leader: {
-                    select: { name: true, email: true }
+                    select: { name: true, email: true, profileUrl: true }
                 },
                 members: {
-                    select: { name: true, points: true, email: true }
+                    select: { name: true, points: true, email: true, profileUrl: true }
                 }
             },
             orderBy: {

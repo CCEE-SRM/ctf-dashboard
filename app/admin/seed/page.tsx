@@ -86,14 +86,14 @@ export default function AdminSeedPage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 p-8">
+        <div className="min-h-screen text-zinc-900 dark:text-zinc-100 p-8">
             <div className="max-w-4xl mx-auto space-y-8">
                 <header className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                        <h1 className="text-4xl font-extrabold tracking-tight font-serif text-foreground">
                             Admin Database Seeder
                         </h1>
-                        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+                        <p className="mt-2 text-zinc-600 dark:text-zinc-400 font-sans">
                             Bulk create teams and users by pasting a JSON array below.
                         </p>
                     </div>

@@ -6,6 +6,7 @@ interface Member {
     name: string | null;
     email: string;
     points: number;
+    profileUrl: string | null;
 }
 
 interface Team {
@@ -15,6 +16,7 @@ interface Team {
     leader: {
         name: string | null;
         email: string;
+        profileUrl: string | null;
     };
     members: Member[];
 }
@@ -61,58 +63,66 @@ export default function LeaderboardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 p-8">
-            <div className="max-w-4xl mx-auto">
-                <header className="mb-12 text-center">
-                    <h1 className="text-5xl font-black bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600 bg-clip-text text-transparent mb-4">
-                        LEADERBOARD
+        <div className="min-h-screen p-8 md:p-12">
+            <div className="max-w-3xl mx-auto">
+                <header className="mb-8 border-b border-zinc-200 dark:border-zinc-800 pb-6">
+                    <h1 className="text-3xl font-serif font-bold text-foreground mb-2">
+                        Leaderboard
                     </h1>
-                    <p className="text-zinc-500 dark:text-zinc-400 text-lg uppercase tracking-widest font-semibold">
-                        Top Teams & Hackers
+                    <p className="text-zinc-500 dark:text-zinc-400 text-base font-sans">
+                        Top performing teams and contributors.
                     </p>
                 </header>
 
-                <div className="space-y-4">
+                <div className="flex flex-col">
                     {teams.map((team, index) => (
                         <div
                             key={team.id}
-                            className={`group relative overflow-hidden bg-white dark:bg-zinc-900 rounded-2xl border transition-all duration-300 ${index === 0
-                                ? "border-yellow-400/50 shadow-[0_0_30px_rgba(250,204,21,0.3)] scale-[1.02]"
-                                : index === 1
-                                    ? "border-zinc-300 dark:border-zinc-600 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
-                                    : index === 2
-                                        ? "border-orange-700/50 shadow-[0_0_20px_rgba(194,65,12,0.2)]"
-                                        : "border-zinc-200 dark:border-zinc-800 hover:border-blue-500/30"
-                                }`}
+                            className={`group border-b border-zinc-100 dark:border-zinc-800 last:border-0`}
                         >
-                            {/* Rank Badge */}
-                            <div className="absolute top-0 left-0 bg-zinc-100 dark:bg-zinc-800 px-4 py-2 rounded-br-2xl border-r border-b border-zinc-200 dark:border-zinc-700 font-bold text-lg z-10">
-                                #{index + 1}
-                            </div>
-
                             <button
                                 onClick={() => toggleTeam(team.id)}
-                                className="w-full text-left p-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between gap-4 outline-none focus:ring-2 focus:ring-blue-500/50 rounded-2xl"
+                                className="w-full flex items-center justify-between py-6 px-4 hover:opacity-80 transition-opacity outline-none"
                             >
-                                <div className="flex flex-col">
-                                    <h3 className="text-2xl font-bold tracking-tight">
-                                        {team.name}
-                                    </h3>
-                                    <span className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                                        Leader: {team.leader?.name || team.leader?.email}
-                                    </span>
-                                </div>
                                 <div className="flex items-center gap-6">
-                                    <div className="text-right">
-                                        <div className="text-3xl font-black tabular-nums tracking-tighter text-blue-600 dark:text-blue-400">
-                                            {team.points.toLocaleString()}
-                                        </div>
-                                        <div className="text-xs uppercase font-bold text-zinc-400 tracking-wider">
-                                            Points
+                                    <span className={`font-mono text-xl font-bold w-8 text-center ${index === 0 ? "text-yellow-500" :
+                                        index === 1 ? "text-zinc-400" :
+                                            index === 2 ? "text-orange-400" :
+                                                "text-zinc-300 dark:text-zinc-600"
+                                        }`}>
+                                        {index + 1}
+                                    </span>
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-left">
+                                            <h3 className="text-lg font-serif font-bold text-foreground flex items-center gap-3">
+                                                {team.leader?.profileUrl ? (
+                                                    <img
+                                                        src={team.leader.profileUrl}
+                                                        alt="Leader"
+                                                        className="w-8 h-8 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
+                                                    />
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500 border border-zinc-200 dark:border-zinc-700">
+                                                        {team.leader?.name ? team.leader.name[0].toUpperCase() : (team.leader?.email?.[0].toUpperCase() || "?")}
+                                                    </div>
+                                                )}
+                                                {team.name}
+                                            </h3>
+                                            <span className="text-xs text-zinc-400 uppercase tracking-wider font-sans ml-11">
+                                                {team.leader?.name || team.leader?.email || "Anonymous"}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className={`transition-transform duration-300 ${expandedTeam === team.id ? 'rotate-180' : ''}`}>
-                                        ▼
+                                </div>
+
+                                <div className="flex items-center gap-8">
+                                    <div className="text-right">
+                                        <div className="text-2xl font-mono font-bold text-primary">
+                                            {team.points}
+                                        </div>
+                                    </div>
+                                    <div className={`text-zinc-300 dark:text-zinc-600 transform transition-transform duration-300 ${expandedTeam === team.id ? 'rotate-180' : ''}`}>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
                                     </div>
                                 </div>
                             </button>
@@ -120,35 +130,38 @@ export default function LeaderboardPage() {
                             {/* Expanded Details */}
                             <div
                                 className={`grid transition-all duration-300 ease-in-out ${expandedTeam === team.id
-                                    ? "grid-rows-[1fr] opacity-100 border-t border-zinc-100 dark:border-zinc-800"
+                                    ? "grid-rows-[1fr] opacity-100 pb-6"
                                     : "grid-rows-[0fr] opacity-0"
                                     }`}
                             >
-                                <div className="overflow-hidden bg-zinc-50 dark:bg-zinc-950/50">
-                                    <div className="p-6 sm:px-10">
-                                        <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-500 mb-4">
-                                            Team Members
-                                        </h4>
-                                        <div className="grid gap-2 sm:grid-cols-2">
-                                            {team.members.map((member, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-violet-500 flex items-center justify-center text-xs font-bold text-white">
-                                                            {member.name ? member.name[0].toUpperCase() : "?"}
-                                                        </div>
-                                                        <div className="text-sm font-medium">
-                                                            {member.name || member.email}
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-sm font-mono font-bold text-zinc-600 dark:text-zinc-400">
-                                                        {member.points} pts
-                                                    </div>
+                                <div className="overflow-hidden px-16">
+                                    <div className="pt-2 pl-4 border-l-2 border-zinc-100 dark:border-zinc-800 space-y-3">
+                                        {team.members.map((member, i) => (
+                                            <div
+                                                key={i}
+                                                className="flex items-center justify-between text-sm"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {member.profileUrl ? (
+                                                        <img
+                                                            src={member.profileUrl}
+                                                            alt={member.name || `Member ${i}`}
+                                                            className="w-6 h-6 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
+                                                        />
+                                                    ) : (
+                                                        <span className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-500 border border-zinc-200 dark:border-zinc-700">
+                                                            {member.name ? member.name[0].toUpperCase() : (member.email?.[0].toUpperCase() || "?")}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-zinc-600 dark:text-zinc-300 font-medium">
+                                                        {member.name || member.email}
+                                                    </span>
                                                 </div>
-                                            ))}
-                                        </div>
+                                                <span className="font-mono text-zinc-400">
+                                                    {member.points}
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -156,8 +169,8 @@ export default function LeaderboardPage() {
                     ))}
 
                     {teams.length === 0 && (
-                        <div className="text-center py-20 text-zinc-500">
-                            No teams found. Be the first to join!
+                        <div className="text-center py-20 text-zinc-400 font-serif">
+                            No teams ranked yet.
                         </div>
                     )}
                 </div>

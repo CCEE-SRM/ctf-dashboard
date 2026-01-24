@@ -63,11 +63,11 @@ export default function CreateChallengePage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 p-8">
+        <div className="min-h-screen text-zinc-900 dark:text-zinc-100 p-8">
             <div className="max-w-3xl mx-auto">
                 <header className="mb-8">
-                    <h1 className="text-3xl font-bold">Create New Challenge</h1>
-                    <p className="text-zinc-500">Add a new CTF challenge to the platform.</p>
+                    <h1 className="text-3xl font-bold font-serif">Create New Challenge</h1>
+                    <p className="text-zinc-500 font-sans">Add a new CTF challenge to the platform.</p>
                 </header>
 
                 <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
