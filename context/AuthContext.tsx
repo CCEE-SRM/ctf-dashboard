@@ -16,6 +16,7 @@ interface AuthContextType {
     signInWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
     dbUser: any | null; // Placeholder for Prisma User type
+    token: string | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
     signInWithGoogle: async () => { },
     logout: async () => { },
     dbUser: null,
+    token: null,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -31,9 +33,9 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [dbUser, setDbUser] = useState<any | null>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Sync user with database
     // Sync user with database
     const syncUserToDb = async (firebaseUser: User) => {
         try {
@@ -51,6 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setDbUser(data.user);
                 // Optionally store data.token (JWT) here
                 console.log("App Token:", data.token);
+                setToken(data.token);
             }
         } catch (error) {
             console.error("Failed to sync user to DB", error);
@@ -88,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout, dbUser }}>
+        <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout, dbUser, token }}>
             {children}
         </AuthContext.Provider>
     );

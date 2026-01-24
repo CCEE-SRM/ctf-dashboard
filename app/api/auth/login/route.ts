@@ -38,17 +38,33 @@ export async function POST(request: Request) {
         }
 
         // 2. Check and Update User
-        const existingUser = await prisma.user.findUnique({ where: { email } });
+        // 2. Check and Update User
+        // Check if this is the first user to make them ADMIN
+        const userCount = await prisma.user.count();
+        // If user count is 0, this will be the first user, so make them ADMIN.
+        // Note: If the user already exists, this 'role' variable won't be used in the 'create' block, so their existing role validates.
+        // However, if we are upserting an existing user, count is at least 1.
+        // Actually, better logic: If we are creating, checks count.
 
-        if (!existingUser) {
-            return NextResponse.json({ error: 'Unauthorized: Access denied' }, { status: 401 });
-        }
+        // Let's use a simpler heuristic for the role in 'create': 
+        // We can't easily know if 'upsert' is creating or updating without checking first or checking result.
+        // But we only care about 'role' in 'create'.
+        // If the DB is empty, userCount is 0. We want role='ADMIN'.
+        // If the DB has users, userCount > 0. We want role='USER'.
 
-        const user = await prisma.user.update({
+        const initialRole = userCount === 0 ? 'ADMIN' : 'USER';
+
+        const user = await prisma.user.upsert({
             where: { email },
-            data: {
+            update: {
                 name: displayName || null,
                 profileUrl: photoUrl || null,
+            },
+            create: {
+                email,
+                name: displayName || null,
+                profileUrl: photoUrl || null,
+                role: initialRole,
             },
         });
 
