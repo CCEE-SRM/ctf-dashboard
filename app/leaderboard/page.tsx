@@ -40,6 +40,10 @@ export default function LeaderboardPage() {
         };
 
         fetchLeaderboard();
+
+        const interval = setInterval(fetchLeaderboard, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(interval);
     }, []);
 
     const toggleTeam = (teamId: string) => {
@@ -73,12 +77,12 @@ export default function LeaderboardPage() {
                         <div
                             key={team.id}
                             className={`group relative overflow-hidden bg-white dark:bg-zinc-900 rounded-2xl border transition-all duration-300 ${index === 0
-                                    ? "border-yellow-400/50 shadow-[0_0_30px_rgba(250,204,21,0.3)] scale-[1.02]"
-                                    : index === 1
-                                        ? "border-zinc-300 dark:border-zinc-600 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
-                                        : index === 2
-                                            ? "border-orange-700/50 shadow-[0_0_20px_rgba(194,65,12,0.2)]"
-                                            : "border-zinc-200 dark:border-zinc-800 hover:border-blue-500/30"
+                                ? "border-yellow-400/50 shadow-[0_0_30px_rgba(250,204,21,0.3)] scale-[1.02]"
+                                : index === 1
+                                    ? "border-zinc-300 dark:border-zinc-600 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                                    : index === 2
+                                        ? "border-orange-700/50 shadow-[0_0_20px_rgba(194,65,12,0.2)]"
+                                        : "border-zinc-200 dark:border-zinc-800 hover:border-blue-500/30"
                                 }`}
                         >
                             {/* Rank Badge */}
@@ -116,8 +120,8 @@ export default function LeaderboardPage() {
                             {/* Expanded Details */}
                             <div
                                 className={`grid transition-all duration-300 ease-in-out ${expandedTeam === team.id
-                                        ? "grid-rows-[1fr] opacity-100 border-t border-zinc-100 dark:border-zinc-800"
-                                        : "grid-rows-[0fr] opacity-0"
+                                    ? "grid-rows-[1fr] opacity-100 border-t border-zinc-100 dark:border-zinc-800"
+                                    : "grid-rows-[0fr] opacity-0"
                                     }`}
                             >
                                 <div className="overflow-hidden bg-zinc-50 dark:bg-zinc-950/50">
