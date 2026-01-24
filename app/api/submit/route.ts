@@ -50,7 +50,26 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
         }
 
         // 4. Correct Flag Logic
+        const submissionFingerprint = `${challengeId}-${teamId || userId}`;
+
         await prisma.$transaction(async (tx) => {
+            // Check for existing fingerprint to give nice error before transaction (optional but friendly)
+            // Actually, let's rely on catch or findUnique. 
+            // Better to findFirst with the new logic if we want a specific error message logic before unique constraint hits.
+            // But we already have step 1. Let's update step 1 to use fingerprint if possible, or just rely on DB logic. 
+            // The step 1 existing logic is: 
+            /*
+             where: {
+                challengeId,
+                OR: [
+                    { userId },
+                    ...(teamId ? [{ teamId }] : [])
+                ]
+            }
+            */
+            // This logic is still correct for "finding if they solved it". 
+            // BUT, to be safe, let's just create.
+
             // Create Submission
             await tx.submission.create({
                 data: {
@@ -58,7 +77,8 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
                     teamId: teamId || null,
                     challengeId,
                     submittedFlag: flag,
-                    isCorrect: true
+                    isCorrect: true,
+                    submissionFingerprint
                 }
             });
 
