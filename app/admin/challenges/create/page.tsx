@@ -12,6 +12,7 @@ export default function CreateChallengePage() {
         description: "",
         theme: "Web", // Default theme
         link: "",
+        thumbnail: "",
         points: 100,
         flag: ""
     });
@@ -45,7 +46,7 @@ export default function CreateChallengePage() {
                 setMessage("Challenge created successfully!");
                 // Reset form or redirect? 
                 // Let's reset for now so they can add more
-                setForm(prev => ({ ...prev, title: "", description: "", flag: "", link: "" }));
+                setForm(prev => ({ ...prev, title: "", description: "", flag: "", link: "", thumbnail: "" }));
             } else {
                 setStatus("error");
                 setMessage(data.error || "Failed to create challenge.");
@@ -127,6 +128,18 @@ export default function CreateChallengePage() {
                                 onChange={handleChange}
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Thumbnail Image URL (Optional)</label>
+                        <input
+                            type="text"
+                            name="thumbnail"
+                            className="w-full bg-zinc-50 dark:bg-black border border-zinc-300 dark:border-zinc-700 rounded-lg p-3"
+                            placeholder="https://... (e.g. imgur.com/image.png)"
+                            value={form.thumbnail}
+                            onChange={handleChange}
+                        />
                     </div>
 
                     <div>

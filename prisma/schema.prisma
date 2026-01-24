@@ -46,6 +46,7 @@ model Challenge {
   description String
   theme       String
   link        String?
+  thumbnail   String? // URL to image
   flag        String // Secret flag
   points      Int
   createdAt   DateTime @default(now())

@@ -23,6 +23,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                 description: true,
                 theme: true,
                 link: true,
+                thumbnail: true,
                 points: true,
                 createdAt: true,
                 // Do NOT select 'flag'

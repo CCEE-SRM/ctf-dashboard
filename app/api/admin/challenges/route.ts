@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 export const POST = adminOnly(async (req: AuthenticatedRequest) => {
     try {
         const body = await req.json();
-        const { title, description, theme, link, points, flag } = body;
+        const { title, description, theme, link, points, flag, thumbnail } = body;
 
         // Basic Validation
         if (!title || !description || !theme || !flag || points === undefined) {
@@ -19,6 +19,7 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                 description,
                 theme,
                 link: link || null,
+                thumbnail: thumbnail || null,
                 points: Number(points),
                 flag
             }

@@ -10,6 +10,7 @@ interface Challenge {
     description: string;
     theme: string;
     link?: string;
+    thumbnail?: string;
     points: number;
     solved: boolean;
 }
@@ -21,6 +22,7 @@ export default function ChallengesPage() {
     const [submitting, setSubmitting] = useState<string | null>(null);
     const [inputs, setInputs] = useState<{ [key: string]: string }>({});
     const [responses, setResponses] = useState<{ [key: string]: { type: "success" | "error"; message: string } }>({});
+    const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
     useEffect(() => {
         const fetchChallenges = async () => {
@@ -44,7 +46,7 @@ export default function ChallengesPage() {
         if (!authLoading && token) {
             fetchChallenges();
         } else if (!authLoading && !token) {
-            setLoading(false); // No token, stop loading but show "Access Denied" or login prompt via logic below
+            setLoading(false);
         }
     }, [authLoading, token]);
 
@@ -84,6 +86,10 @@ export default function ChallengesPage() {
                 }));
                 // Mark as solved locally
                 setChallenges(prev => prev.map(c => c.id === id ? { ...c, solved: true } : c));
+                // Update selected challenge solved status if open
+                if (selectedChallenge?.id === id) {
+                    setSelectedChallenge(prev => prev ? { ...prev, solved: true } : null);
+                }
             } else {
                 setResponses((prev) => ({
                     ...prev,
@@ -112,8 +118,8 @@ export default function ChallengesPage() {
         return (
             <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4">Login Required</h1>
-                    <p className="mb-4">Please sign in to view and submit challenges.</p>
+                    <h1 className="text-2xl font-bold mb-4 font-serif">Login Required</h1>
+                    <p className="mb-4 font-sans">Please sign in to view and submit challenges.</p>
                 </div>
             </div>
         );
@@ -131,47 +137,107 @@ export default function ChallengesPage() {
                     </p>
                 </header>
 
-                <div className="space-y-8">
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {challenges.map((challenge) => (
-                        <div
+                        <button
                             key={challenge.id}
-                            className={`group relative p-6 md:p-8 rounded-xl transition-all duration-300 ${challenge.solved
-                                ? "bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800"
-                                : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:shadow-lg hover:border-primary/30"
+                            onClick={() => setSelectedChallenge(challenge)}
+                            className={`group relative flex flex-col items-start text-left bg-white dark:bg-zinc-900 rounded-xl border transition-all duration-300 overflow-hidden h-full hover:shadow-xl hover:-translate-y-1 ${challenge.solved
+                                ? "border-green-200 dark:border-green-900/30 opacity-75"
+                                : "border-zinc-200 dark:border-zinc-800 hover:border-primary/50"
                                 }`}
                         >
-                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+                            {/* Thumbnail or Placeholder */}
+                            <div className="w-full aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
+                                {challenge.thumbnail ? (
+                                    <img src={challenge.thumbnail} alt={challenge.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                ) : (
+                                    <div className="text-4xl font-serif text-zinc-300 dark:text-zinc-700 select-none">
+                                        {challenge.title[0]}
+                                    </div>
+                                )}
+                                {challenge.solved && (
+                                    <div className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
+                                        SOLVED
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-5 w-full flex-1 flex flex-col">
+                                <div className="flex items-center justify-between w-full mb-3">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-sans bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">
+                                        {challenge.theme}
+                                    </span>
+                                    <span className="text-sm font-mono font-bold text-primary">
+                                        {challenge.points} pts
+                                    </span>
+                                </div>
+                                <h3 className="text-xl font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1">
+                                    {challenge.title}
+                                </h3>
+                                <div className="text-sm text-zinc-500 dark:text-zinc-400 font-sans line-clamp-2 mb-4 prose prose-zinc dark:prose-invert max-w-none prose-p:my-0 prose-headings:text-base prose-headings:my-0">
+                                    <ReactMarkdown>{challenge.description}</ReactMarkdown>
+                                </div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+
+                {challenges.length === 0 && (
+                    <div className="text-center py-20 text-zinc-400 italic font-serif">
+                        No challenges curated yet.
+                    </div>
+                )}
+            </div>
+
+            {/* Modal */}
+            {selectedChallenge && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div
+                        className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 flex flex-col animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6 md:p-8">
+                            <div className="flex items-start justify-between mb-6">
                                 <div>
                                     <div className="flex items-center gap-3 mb-2">
                                         <span className="text-xs font-bold uppercase tracking-wider text-primary font-sans">
-                                            {challenge.theme}
+                                            {selectedChallenge.theme}
                                         </span>
-                                        {challenge.solved && (
-                                            <span className="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-500 flex items-center gap-1">
-                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                Solved
-                                            </span>
-                                        )}
+                                        <span className="text-xs font-mono font-bold text-zinc-400">
+                                            {selectedChallenge.points} pts
+                                        </span>
                                     </div>
-                                    <h2 className="text-2xl font-serif font-bold text-foreground group-hover:text-primary transition-colors">
-                                        {challenge.title}
+                                    <h2 className="text-3xl font-serif font-bold text-foreground">
+                                        {selectedChallenge.title}
                                     </h2>
                                 </div>
-                                <div className="font-mono text-lg font-bold text-zinc-400 dark:text-zinc-600">
-                                    {challenge.points}
-                                </div>
+                                <button
+                                    onClick={() => setSelectedChallenge(null)}
+                                    className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500"
+                                >
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
+
+                            {selectedChallenge.thumbnail && (
+                                <img
+                                    src={selectedChallenge.thumbnail}
+                                    alt={selectedChallenge.title}
+                                    className="w-full h-64 object-cover rounded-xl mb-8 border border-zinc-100 dark:border-zinc-800"
+                                />
+                            )}
 
                             <div className="prose prose-zinc dark:prose-invert max-w-none text-zinc-600 dark:text-zinc-300 font-sans leading-relaxed mb-8">
-                                <ReactMarkdown>{challenge.description}</ReactMarkdown>
+                                <ReactMarkdown>{selectedChallenge.description}</ReactMarkdown>
                             </div>
 
-                            {challenge.link && (
+                            {selectedChallenge.link && (
                                 <div className="mb-8">
                                     <a
-                                        href={challenge.link}
+                                        href={selectedChallenge.link}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium"
@@ -184,44 +250,45 @@ export default function ChallengesPage() {
                                 </div>
                             )}
 
-                            {!challenge.solved && (
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                    <input
-                                        type="text"
-                                        placeholder="Flag{...}"
-                                        className="flex-1 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3 font-mono text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
-                                        value={inputs[challenge.id] || ""}
-                                        onChange={(e) => handleInputChange(challenge.id, e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSubmit(challenge.id)}
-                                    />
-                                    <button
-                                        onClick={() => handleSubmit(challenge.id)}
-                                        disabled={submitting === challenge.id || !inputs[challenge.id]}
-                                        className="bg-primary hover:opacity-90 text-white font-medium px-6 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                                    >
-                                        {submitting === challenge.id ? "..." : "Submit"}
-                                    </button>
-                                </div>
-                            )}
-
-                            {responses[challenge.id] && (
-                                <div className={`mt-3 text-sm font-medium ${responses[challenge.id].type === 'success'
-                                    ? 'text-green-600 dark:text-green-400'
-                                    : 'text-red-500 dark:text-red-400'
-                                    }`}>
-                                    {responses[challenge.id].message}
-                                </div>
-                            )}
+                            <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6">
+                                {selectedChallenge.solved ? (
+                                    <div className="flex items-center justify-center p-4 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 font-bold border border-green-200 dark:border-green-800/50">
+                                        ✅ Challenge Solved
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <div className="flex gap-3">
+                                            <input
+                                                type="text"
+                                                placeholder="Flag{...}"
+                                                className="flex-1 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3 font-mono text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+                                                value={inputs[selectedChallenge.id] || ""}
+                                                onChange={(e) => handleInputChange(selectedChallenge.id, e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSubmit(selectedChallenge.id)}
+                                            />
+                                            <button
+                                                onClick={() => handleSubmit(selectedChallenge.id)}
+                                                disabled={submitting === selectedChallenge.id || !inputs[selectedChallenge.id]}
+                                                className="bg-primary hover:opacity-90 text-white font-medium px-6 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {submitting === selectedChallenge.id ? "..." : "Submit"}
+                                            </button>
+                                        </div>
+                                        {responses[selectedChallenge.id] && (
+                                            <div className={`mt-2 text-sm font-medium ${responses[selectedChallenge.id].type === 'success'
+                                                ? 'text-green-600 dark:text-green-400'
+                                                : 'text-red-500 dark:text-red-400'
+                                                }`}>
+                                                {responses[selectedChallenge.id].message}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    ))}
-
-                    {challenges.length === 0 && (
-                        <div className="text-center py-20 text-zinc-400 italic font-serif">
-                            No challenges curated yet.
-                        </div>
-                    )}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
