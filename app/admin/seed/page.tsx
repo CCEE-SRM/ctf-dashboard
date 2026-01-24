@@ -88,13 +88,21 @@ export default function AdminSeedPage() {
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 p-8">
             <div className="max-w-4xl mx-auto space-y-8">
-                <header>
-                    <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                        Admin Database Seeder
-                    </h1>
-                    <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-                        Bulk create teams and users by pasting a JSON array below.
-                    </p>
+                <header className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                            Admin Database Seeder
+                        </h1>
+                        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+                            Bulk create teams and users by pasting a JSON array below.
+                        </p>
+                    </div>
+                    <a
+                        href="/admin/challenges/create"
+                        className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                    >
+                        Create Challenge →
+                    </a>
                 </header>
 
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
