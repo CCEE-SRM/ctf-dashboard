@@ -60,13 +60,15 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
 
             const leaderRecord = await prisma.user.findUniqueOrThrow({ where: { email: teamData.leaderEmail } });
 
+            const allMemberEmails = Array.from(new Set([...memberEmails, teamData.leaderEmail]));
+
             const team = await prisma.team.upsert({
                 where: { leaderId: leaderRecord.id },
                 update: {
                     name: teamData.name,
                     points: teamData.points,
                     members: {
-                        connect: memberEmails.map(email => ({ email }))
+                        connect: allMemberEmails.map(email => ({ email }))
                     }
                 },
                 create: {
@@ -74,7 +76,7 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                     points: teamData.points,
                     leader: { connect: { id: leaderRecord.id } },
                     members: {
-                        connect: memberEmails.map(email => ({ email }))
+                        connect: allMemberEmails.map(email => ({ email }))
                     }
                 }
             });
