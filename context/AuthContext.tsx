@@ -87,8 +87,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const signInWithGoogle = async () => {
         try {
             await signInWithPopup(auth, googleProvider);
-        } catch (error) {
-            console.error("Error signing in with Google", error);
+        } catch (error: any) {
+            if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+                console.warn("Google Sign-In was cancelled by the user.");
+            } else {
+                console.error("Error signing in with Google", error);
+            }
         }
     };
 
