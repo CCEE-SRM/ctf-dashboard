@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ReactMarkdown from "react-markdown";
+import Link from "next/link";
 
 interface Challenge {
     id: string;
@@ -128,6 +129,12 @@ export default function ChallengesPage() {
     return (
         <div className="min-h-screen p-8 md:p-12">
             <div className="max-w-4xl mx-auto">
+                <div className="flex justify-end mb-4 px-4 sm:px-0">
+                    <Link href="/profile" className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center gap-1">
+                        View Profile <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                </div>
+
                 <header className="mb-12 text-center border-b border-zinc-200 dark:border-zinc-800 pb-8">
                     <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-3">
                         Knowledge Challenges

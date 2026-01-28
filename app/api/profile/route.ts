@@ -1,0 +1,66 @@
+import { prisma } from '@/lib/prisma';
+import { authenticated } from '@/lib/auth-middleware';
+import { AuthenticatedRequest } from '@/types/auth';
+import { NextResponse } from 'next/server';
+
+export const GET = authenticated(async (req: AuthenticatedRequest) => {
+    try {
+        const userId = req.user.userId;
+
+        const userProfile = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                profileUrl: true,
+                points: true,
+                role: true,
+                submissions: {
+                    where: { isCorrect: true },
+                    orderBy: { createdAt: 'desc' },
+                    select: {
+                        id: true,
+                        createdAt: true,
+                        challenge: {
+                            select: {
+                                id: true,
+                                title: true,
+                                points: true,
+                                theme: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!userProfile) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        // Transform data for cleaner frontend consumption
+        const solvedChallenges = userProfile.submissions.map(sub => ({
+            id: sub.challenge.id,
+            title: sub.challenge.title,
+            points: sub.challenge.points,
+            theme: sub.challenge.theme,
+            solvedAt: sub.createdAt
+        }));
+
+        return NextResponse.json({
+            user: {
+                name: userProfile.name,
+                email: userProfile.email,
+                profileUrl: userProfile.profileUrl,
+                points: userProfile.points,
+                role: userProfile.role
+            },
+            solvedChallenges
+        });
+
+    } catch (error) {
+        console.error('Profile fetch error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+});
