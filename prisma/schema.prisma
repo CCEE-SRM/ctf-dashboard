@@ -50,6 +50,7 @@ model Challenge {
   thumbnail   String? // URL to image
   flag        String // Secret flag
   points      Int
+  visible     Boolean  @default(true)
   createdAt   DateTime @default(now())
 
   submissions Submission[]

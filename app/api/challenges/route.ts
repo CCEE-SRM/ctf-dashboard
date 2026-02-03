@@ -17,6 +17,9 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
         const teamId = user?.teamId;
 
         const problems = await prisma.challenge.findMany({
+            where: {
+                visible: true
+            },
             select: {
                 id: true,
                 title: true,
