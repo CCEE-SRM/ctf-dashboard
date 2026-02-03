@@ -21,6 +21,7 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                 link: link || null,
                 thumbnail: thumbnail || null,
                 points: Number(points),
+                initialPoints: Number(points),
                 flag
             }
         });

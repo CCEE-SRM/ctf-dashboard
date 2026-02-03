@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ReactMarkdown from "react-markdown";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 
@@ -50,6 +51,28 @@ export default function ChallengesPage() {
         } else if (!authLoading && !token) {
             setLoading(false);
         }
+
+        // Subscribe to real-time changes
+        const channel = supabase
+            .channel('challenges-realtime')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'Leaderboard'
+                },
+                (payload) => {
+                    console.log('Real-time update received:', payload);
+                    // Re-fetch challenges to get updated points
+                    if (token) fetchChallenges();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [authLoading, token]);
 
     const handleInputChange = (id: string, value: string) => {

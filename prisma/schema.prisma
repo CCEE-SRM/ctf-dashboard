@@ -42,16 +42,17 @@ model Team {
 }
 
 model Challenge {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  theme       String
-  link        String?
-  thumbnail   String? // URL to image
-  flag        String // Secret flag
-  points      Int
-  visible     Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(uuid())
+  title         String
+  description   String
+  theme         String
+  link          String?
+  thumbnail     String? // URL to image
+  flag          String // Secret flag
+  points        Int
+  initialPoints Int      @default(0)
+  visible       Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   submissions Submission[]
 }
