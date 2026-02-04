@@ -50,7 +50,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
             }
         });
 
-        const solvedChallengeIds = new Set(submissions.map(s => s.challengeId));
+        const solvedChallengeIds = new Set(submissions.map((s: { challengeId: string }) => s.challengeId));
 
         const challengesWithStatus = problems.map(p => ({
             ...p,
