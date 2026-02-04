@@ -40,7 +40,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
         }
 
         // Transform data for cleaner frontend consumption
-        const solvedChallenges = userProfile.submissions.map(sub => ({
+        const solvedChallenges = userProfile.submissions.map((sub: typeof userProfile.submissions[0]) => ({
             id: sub.challenge.id,
             title: sub.challenge.title,
             points: sub.challenge.points,
