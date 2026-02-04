@@ -52,7 +52,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
 
         const solvedChallengeIds = new Set(submissions.map((s: { challengeId: string }) => s.challengeId));
 
-        const challengesWithStatus = problems.map(p => ({
+        const challengesWithStatus = problems.map((p: typeof problems[0]) => ({
             ...p,
             solved: solvedChallengeIds.has(p.id)
         }));
