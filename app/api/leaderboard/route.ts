@@ -24,12 +24,12 @@ export async function GET() {
         });
 
         // Map to the expected frontend structure
-        const teams = leaderboardEntries.map(entry => ({
+        const teams = leaderboardEntries.map((entry: typeof leaderboardEntries[0]) => ({
             id: entry.team.id,
             name: entry.team.name,
             points: entry.points,
             leader: entry.team.leader,
-            members: entry.memberDetails
+            members: entry.memberDetails,
         }));
 
         return NextResponse.json(teams);
