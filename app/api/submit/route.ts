@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { authenticated } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -52,7 +53,7 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
         // 4. Correct Flag Logic
         const submissionFingerprint = `${challengeId}-${teamId || userId}`;
 
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             // Create Submission
             await tx.submission.create({
                 data: {
