@@ -215,8 +215,10 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
                 });
             }
             // Invalidate Caches
+            console.log('[CACHE INVALIDATE] Deleting leaderboard:data');
             await redis.del('leaderboard:data'); // Always update leaderboard
             if (pointDiff > 0) {
+                console.log('[CACHE INVALIDATE] Deleting challenges:list (Point Decay)');
                 await redis.del('challenges:list'); // Update challenge points if decayed
             }
         });

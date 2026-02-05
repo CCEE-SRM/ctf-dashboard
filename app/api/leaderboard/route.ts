@@ -8,9 +8,11 @@ export async function GET() {
     try {
         const cachedLeaderboard = await redis.get('leaderboard:data');
         if (cachedLeaderboard) {
+            console.log('[CACHE HIT] Leaderboard fetched from Redis');
             return NextResponse.json(JSON.parse(cachedLeaderboard));
         }
 
+        console.log('[CACHE MISS] Leaderboard fetching from DB');
         const leaderboardEntries = await prisma.leaderboard.findMany({
             include: {
                 team: {

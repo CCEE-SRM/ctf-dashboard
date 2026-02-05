@@ -21,8 +21,10 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
         let problems;
 
         if (cachedChallenges) {
+            console.log('[CACHE HIT] Challenges fetched from Redis');
             problems = JSON.parse(cachedChallenges);
         } else {
+            console.log('[CACHE MISS] Challenges fetching from DB');
             problems = await prisma.challenge.findMany({
                 where: {
                     visible: true
