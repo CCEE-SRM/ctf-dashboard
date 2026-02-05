@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 import { authenticated } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -16,25 +17,33 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
         });
         const teamId = user?.teamId;
 
-        const problems = await prisma.challenge.findMany({
-            where: {
-                visible: true
-            },
-            select: {
-                id: true,
-                title: true,
-                description: true,
-                theme: true,
-                link: true,
-                thumbnail: true,
-                points: true,
-                createdAt: true,
-                // Do NOT select 'flag'
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
-        });
+        const cachedChallenges = await redis.get('challenges:list');
+        let problems;
+
+        if (cachedChallenges) {
+            problems = JSON.parse(cachedChallenges);
+        } else {
+            problems = await prisma.challenge.findMany({
+                where: {
+                    visible: true
+                },
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    theme: true,
+                    link: true,
+                    thumbnail: true,
+                    points: true,
+                    createdAt: true,
+                    // Do NOT select 'flag'
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            });
+            await redis.set('challenges:list', JSON.stringify(problems));
+        }
 
         // Get submissions for this user OR team to mark as solved
         const submissions = await prisma.submission.findMany({

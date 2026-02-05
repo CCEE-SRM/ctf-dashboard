@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 import { adminOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -25,6 +26,8 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                 flag
             }
         });
+
+        await redis.del('challenges:list');
 
         return NextResponse.json({ message: 'Challenge created successfully', challenge }, { status: 201 });
 

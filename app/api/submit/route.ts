@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { redis } from '@/lib/redis';
 import { authenticated } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -212,6 +213,11 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
                         memberDetails: updatedTeam.members as any
                     }
                 });
+            }
+            // Invalidate Caches
+            await redis.del('leaderboard:data'); // Always update leaderboard
+            if (pointDiff > 0) {
+                await redis.del('challenges:list'); // Update challenge points if decayed
             }
         });
 
