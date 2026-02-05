@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 
@@ -45,27 +44,6 @@ export default function LeaderboardPage() {
         };
 
         fetchLeaderboard();
-
-        // Subscribe to real-time changes
-        const channel = supabase
-            .channel('leaderboard-changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
-                    schema: 'public',
-                    table: 'Leaderboard'
-                },
-                (payload: any) => {
-                    console.log('Real-time update received:', payload);
-                    fetchLeaderboard(); // Re-fetch to ensure correct sorting and full data
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
     }, []);
 
     const toggleTeam = (teamId: string) => {
