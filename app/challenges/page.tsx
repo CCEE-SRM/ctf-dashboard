@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ReactMarkdown from "react-markdown";
-import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import Link from "next/link"; // For the right sidebar links
 
 interface Challenge {
     id: string;
@@ -15,6 +14,7 @@ interface Challenge {
     thumbnail?: string;
     points: number;
     solved: boolean;
+    attachment?: string; // Added support for attachment if API provides it, or mock it
 }
 
 export default function ChallengesPage() {
@@ -22,21 +22,29 @@ export default function ChallengesPage() {
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState<string | null>(null);
-    const [inputs, setInputs] = useState<{ [key: string]: string }>({});
-    const [responses, setResponses] = useState<{ [key: string]: { type: "success" | "error"; message: string } }>({});
+    const [flagInput, setFlagInput] = useState("");
+    const [response, setResponse] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+    // Selection State
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
     useEffect(() => {
         const fetchChallenges = async () => {
             try {
                 const res = await fetch("/api/challenges", {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
                 if (res.ok) {
                     const data = await res.json();
                     setChallenges(data);
+                    // Select first category and challenge by default if available
+                    if (data.length > 0) {
+                        const firstTheme = data[0].theme;
+                        setSelectedCategory(firstTheme);
+                        const firstChall = data.find((c: Challenge) => c.theme === firstTheme);
+                        if (firstChall) setSelectedChallenge(firstChall);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch challenges", error);
@@ -45,29 +53,40 @@ export default function ChallengesPage() {
             }
         };
 
-        if (!authLoading && token) {
+        if (token && !authLoading) {
             fetchChallenges();
         } else if (!authLoading && !token) {
             setLoading(false);
         }
-    }, [authLoading, token]);
+    }, [token, authLoading]);
 
-    const handleInputChange = (id: string, value: string) => {
-        setInputs((prev) => ({ ...prev, [id]: value }));
+    // Derived Data
+    const categories = useMemo(() => {
+        return Array.from(new Set(challenges.map(c => c.theme)));
+    }, [challenges]);
+
+    const filteredChallenges = useMemo(() => {
+        return challenges.filter(c => c.theme === selectedCategory);
+    }, [challenges, selectedCategory]);
+
+    const handleCategoryClick = (category: string) => {
+        setSelectedCategory(category);
+        const firstInCat = challenges.find(c => c.theme === category);
+        setSelectedChallenge(firstInCat || null);
+        setFlagInput("");
+        setResponse(null);
     };
 
-    const handleSubmit = async (id: string) => {
-        const flag = inputs[id];
-        if (!flag) return;
+    const handleChallengeClick = (challenge: Challenge) => {
+        setSelectedChallenge(challenge);
+        setFlagInput("");
+        setResponse(null);
+    };
 
-        setSubmitting(id);
-
-        // Clear previous response
-        setResponses(prev => {
-            const next = { ...prev };
-            delete next[id];
-            return next;
-        });
+    const handleSubmit = async () => {
+        if (!selectedChallenge || !flagInput) return;
+        setSubmitting(selectedChallenge.id);
+        setResponse(null);
 
         try {
             const res = await fetch("/api/submit", {
@@ -76,226 +95,259 @@ export default function ChallengesPage() {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`,
                 },
-                body: JSON.stringify({ challengeId: id, flag }),
+                body: JSON.stringify({ challengeId: selectedChallenge.id, flag: flagInput }),
             });
-
             const data = await res.json();
-
             if (res.ok) {
-                setResponses((prev) => ({
-                    ...prev,
-                    [id]: { type: "success", message: data.message },
-                }));
-                // Mark as solved locally
-                setChallenges(prev => prev.map(c => c.id === id ? { ...c, solved: true } : c));
-                // Update selected challenge solved status if open
-                if (selectedChallenge?.id === id) {
-                    setSelectedChallenge(prev => prev ? { ...prev, solved: true } : null);
-                }
+                setResponse({ type: "success", message: data.message });
+                setChallenges(prev => prev.map(c => c.id === selectedChallenge.id ? { ...c, solved: true } : c));
+                setSelectedChallenge(prev => prev ? { ...prev, solved: true } : null);
             } else {
-                setResponses((prev) => ({
-                    ...prev,
-                    [id]: { type: "error", message: data.error },
-                }));
+                setResponse({ type: "error", message: data.error });
             }
         } catch {
-            setResponses((prev) => ({
-                ...prev,
-                [id]: { type: "error", message: "Network error occurred." },
-            }));
+            setResponse({ type: "error", message: "Network error." });
         } finally {
             setSubmitting(null);
         }
     };
 
     if (authLoading || loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100">
-                <div className="animate-pulse">Loading Challenges...</div>
-            </div>
-        );
+        return <div className="min-h-screen bg-retro-bg flex items-center justify-center font-pixel text-xl">LOADING...</div>;
     }
 
     if (!token) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4 font-serif">Login Required</h1>
-                    <p className="mb-4 font-sans">Please sign in to view and submit challenges.</p>
+            <div className="flex min-h-screen flex-col bg-retro-bg text-black font-mono-retro">
+
+                <div className="flex-1 flex items-center justify-center flex-col gap-4">
+                    <h1 className="text-4xl font-pixel">ACCESS DENIED</h1>
+                    <p className="text-xl">Please log in to access the mainframe.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen">
-            <Navbar />
-            <div className="p-8 md:p-12">
-                <div className="max-w-4xl mx-auto">
+        <div className="flex h-screen overflow-hidden bg-retro-bg text-black font-mono-retro">
 
-                    <header className="mb-12 text-center border-b border-zinc-200 dark:border-zinc-800 pb-8">
-                        <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-3">
-                            Knowledge Challenges
-                        </h1>
-                        <p className="text-zinc-500 dark:text-zinc-400 text-base font-sans">
-                            Solve problems to verify your understanding.
-                        </p>
-                    </header>
+            {/* Main Content Area (HUD + Panels) */}
+            <div className="flex flex-col flex-1 overflow-hidden min-w-0">
 
-                    <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                        {challenges.map((challenge) => (
-                            <button
-                                key={challenge.id}
-                                onClick={() => setSelectedChallenge(challenge)}
-                                className={`group relative flex flex-col items-start text-left bg-white dark:bg-zinc-900 rounded-xl border transition-all duration-300 overflow-hidden h-full hover:shadow-xl hover:-translate-y-1 ${challenge.solved
-                                    ? "border-green-200 dark:border-green-900/30 opacity-75"
-                                    : "border-zinc-200 dark:border-zinc-800 hover:border-primary/50"
-                                    }`}
-                            >
-                                {/* Thumbnail or Placeholder */}
-                                <div className="w-full aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
-                                    {challenge.thumbnail ? (
-                                        <img src={challenge.thumbnail} alt={challenge.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                                    ) : (
-                                        <div className="text-4xl font-serif text-zinc-300 dark:text-zinc-700 select-none">
-                                            {challenge.title[0]}
-                                        </div>
-                                    )}
-                                    {challenge.solved && (
-                                        <div className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
-                                            SOLVED
-                                        </div>
-                                    )}
-                                </div>
+                {/* 0. TOP HUD (Retro Header) */}
+                <div className="h-24 border-b-2 border-retro-border bg-zinc-100 flex items-center justify-between px-6 shrink-0 relative z-20">
+                    {/* Background Pattern for Header */}
+                    <div className="absolute inset-0 bg-[url('/grid.png')] opacity-5 pointer-events-none"></div>
 
-                                <div className="p-5 w-full flex-1 flex flex-col">
-                                    <div className="flex items-center justify-between w-full mb-3">
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-sans bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">
-                                            {challenge.theme}
-                                        </span>
-                                        <span className="text-sm font-mono font-bold text-primary">
-                                            {challenge.points} pts
-                                        </span>
-                                    </div>
-                                    <h3 className="text-xl font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1">
-                                        {challenge.title}
-                                    </h3>
-                                    <div className="text-sm text-zinc-500 dark:text-zinc-400 font-sans line-clamp-2 mb-4 prose prose-zinc dark:prose-invert max-w-none prose-p:my-0 prose-headings:text-base prose-headings:my-0">
-                                        <ReactMarkdown>{challenge.description}</ReactMarkdown>
-                                    </div>
-                                </div>
-                            </button>
-                        ))}
+                    {/* Left: Flag & Status */}
+                    <div className="flex items-center gap-6 relative z-10">
+                        <div className="text-5xl animate-bounce">
+                            🚩
+                        </div>
+                        <div className="h-12 w-[2px] bg-zinc-300"></div>
+                        <div className="font-pixel text-xs md:text-sm text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                            <div className={`w-2 h-2 ${token ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                            [{token ? `OPERATIVE: ${"USER"}` : "NOT LOGGED IN"}]
+                        </div>
                     </div>
 
-                    {challenges.length === 0 && (
-                        <div className="text-center py-20 text-zinc-400 italic font-serif">
-                            No challenges curated yet.
+                    {/* Center: Decorative D-Pad / Pattern */}
+                    <div className="hidden md:flex items-center justify-center border-2 border-zinc-300 bg-white p-1 shadow-sm mx-4">
+                        <div className="grid grid-cols-5 gap-[2px]">
+                            {[...Array(15)].map((_, i) => (
+                                <div key={i} className={`w-1 h-1 ${i % 2 === 0 ? 'bg-black' : 'bg-transparent'}`}></div>
+                            ))}
                         </div>
-                    )}
+                    </div>
+
+                    {/* Right: Announcements & Timer */}
+                    <div className="flex items-center gap-6 relative z-10">
+                        <div className="hidden md:flex items-center gap-2 border-r-2 border-zinc-300 pr-6">
+                            <span className="text-5xl font-bold">⚄</span>
+                            <div className="flex flex-col">
+                                <span className="font-pixel text-xs text-zinc-400">UPDATES</span>
+                                <span className="font-mono text-lg font-bold leading-none">ANNOUNCEMENTS (13)</span>
+                            </div>
+                        </div>
+
+                        <div className="text-right">
+                            <div className="font-mono text-sm text-zinc-400 mb-1">119.14 | 0.43</div>
+                            <div className="font-pixel text-lg md:text-xl">CTF CLOSED <span className="text-zinc-400 text-xs">06/02/2026</span></div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Modal */}
-                {selectedChallenge && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div
-                            className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 flex flex-col animate-in zoom-in-95 duration-200"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="p-6 md:p-8">
-                                <div className="flex items-start justify-between mb-6">
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className="text-xs font-bold uppercase tracking-wider text-primary font-sans">
-                                                {selectedChallenge.theme}
-                                            </span>
-                                            <span className="text-xs font-mono font-bold text-zinc-400">
-                                                {selectedChallenge.points} pts
-                                            </span>
-                                        </div>
-                                        <h2 className="text-3xl font-serif font-bold text-foreground">
-                                            {selectedChallenge.title}
-                                        </h2>
+                <div className="flex flex-1 overflow-hidden relative">
+                    {/* 1. LEFT SIDEBAR: Vertical Text */}
+                    <div className="hidden md:flex w-32 border-r-2 border-retro-border bg-zinc-100 items-center justify-center relative shadow-inner">
+                        <div className="bg-[url('/grid.png')] opacity-10 absolute inset-0"></div>
+                        <div className="-rotate-90 whitespace-nowrap text-5xl font-pixel tracking-widest text-shadow-retro select-none">
+                            Challenges
+                        </div>
+                    </div>
+
+                    {/* 2. CATEGORIES COLUMN */}
+                    <div className="w-80 border-r-2 border-retro-border bg-white flex flex-col overflow-y-auto">
+                        {categories.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => handleCategoryClick(cat)}
+                                className={`p-6 text-left border-b-2 border-retro-border transition-all hover:pl-8 group relative ${selectedCategory === cat
+                                    ? "bg-retro-green"
+                                    : "hover:bg-zinc-50"
+                                    }`}
+                            >
+                                <span className={`text-4xl font-pixel block break-words leading-tight ${selectedCategory === cat ? 'animate-pulse' : ''}`}>
+                                    {cat}
+                                </span>
+                                {/* Decorative Icon based on category? */}
+                                <span className="absolute top-2 right-2 text-xs font-mono opacity-50 block group-hover:opacity-100">
+                                    {selectedCategory === cat ? '< SELECTED' : ''}
+                                </span>
+                            </button>
+                        ))}
+                        {/* Fill empty space */}
+                        <div className="flex-1 bg-zinc-50/50 relative">
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,#00000005_1px,transparent_1px)] bg-[size:10px_10px]"></div>
+                        </div>
+                    </div>
+
+                    {/* 3. CHALLENGE LIST COLUMN */}
+                    <div className="w-72 border-r-2 border-retro-border bg-zinc-50 flex flex-col overflow-y-auto">
+                        {filteredChallenges.map(challenge => (
+                            <button
+                                key={challenge.id}
+                                onClick={() => handleChallengeClick(challenge)}
+                                className={`p-4 border-b border-retro-border/20 text-left transition-colors flex justify-between items-baseline ${selectedChallenge?.id === challenge.id
+                                    ? "bg-white border-l-4 border-l-black"
+                                    : "hover:bg-white text-zinc-600"
+                                    }`}
+                            >
+                                <span className="text-xl font-bold truncate pr-2">{challenge.title.toUpperCase()}</span>
+                                <span className="text-sm font-mono">{challenge.points}pt</span>
+                            </button>
+                        ))}
+                        {filteredChallenges.length === 0 && (
+                            <div className="p-8 text-zinc-400 italic">No challenges here yet.</div>
+                        )}
+                    </div>
+
+                    {/* 4. DETAILS PANE (Main) */}
+                    <div className="flex-1 bg-white relative flex flex-col overflow-y-auto">
+                        {/* Retro Grid Background */}
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+
+                        {selectedChallenge ? (
+                            <div className="relative z-10 p-12 max-w-4xl">
+                                {/* Header */}
+                                <div className="flex items-start justify-between mb-12 border-b-2 border-black pb-4 border-dashed">
+                                    <h1 className="text-6xl font-pixel font-normal text-black leading-tight break-words max-w-2xl">
+                                        {selectedChallenge.title}
+                                    </h1>
+                                    <div className="border-2 border-black p-4 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative">
+                                        <div className="absolute -top-3 -left-3 bg-white px-1 text-xs font-bold border border-black">POINTS</div>
+                                        <span className="text-4xl font-mono-retro font-bold">{selectedChallenge.points}pt</span>
+                                        {/* Bracket corners */}
+                                        <div className="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-black"></div>
+                                        <div className="absolute -top-1 -right-1 w-2 h-2 border-t-2 border-r-2 border-black"></div>
+                                        <div className="absolute -bottom-1 -left-1 w-2 h-2 border-b-2 border-l-2 border-black"></div>
+                                        <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-black"></div>
                                     </div>
-                                    <button
-                                        onClick={() => setSelectedChallenge(null)}
-                                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500"
-                                    >
-                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
                                 </div>
 
-                                {selectedChallenge.thumbnail && (
-                                    <img
-                                        src={selectedChallenge.thumbnail}
-                                        alt={selectedChallenge.title}
-                                        className="w-full h-64 object-cover rounded-xl mb-8 border border-zinc-100 dark:border-zinc-800"
-                                    />
-                                )}
+                                {/* Question Mark / Icon */}
+                                <div className="mb-8 text-8xl opacity-10 font-pixel select-none absolute top-40 right-12 z-0">?</div>
 
-                                <div className="prose prose-zinc dark:prose-invert max-w-none text-zinc-600 dark:text-zinc-300 font-sans leading-relaxed mb-8">
+                                {/* Description */}
+                                <div className="prose prose-p:font-mono-retro prose-headings:font-pixel font-normal max-w-none text-xl mb-8 relative z-10 bg-white/80 p-4 border border-zinc-100 backdrop-blur-sm rounded">
                                     <ReactMarkdown>{selectedChallenge.description}</ReactMarkdown>
                                 </div>
 
-                                {selectedChallenge.link && (
-                                    <div className="mb-8">
-                                        <a
-                                            href={selectedChallenge.link}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                            </svg>
-                                            Related Resources
-                                        </a>
-                                    </div>
-                                )}
+                                {/* Attachment mock */}
+                                <div className="mb-8">
+                                    <button className="bg-purple-600 text-white font-bold py-2 px-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-2 border-2 border-black">
+                                        <span>⬇ Attachment</span>
+                                        <span className="font-mono text-sm bg-black/20 px-2 rounded">file.zip</span>
+                                    </button>
+                                </div>
 
-                                <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6">
+                                {/* Separator */}
+                                <div className="w-full h-[2px] bg-black my-8 opacity-20"></div>
+
+                                {/* Submission Area */}
+                                <div className="bg-zinc-100 p-6 border-2 border-zinc-200">
                                     {selectedChallenge.solved ? (
-                                        <div className="flex items-center justify-center p-4 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 font-bold border border-green-200 dark:border-green-800/50">
-                                            ✅ Challenge Solved
+                                        <div className="text-green-600 font-bold text-2xl flex items-center gap-4">
+                                            <span>★ FLAG CAPTURED</span>
                                         </div>
                                     ) : (
-                                        <div className="space-y-3">
-                                            <div className="flex gap-3">
+                                        <div className="space-y-4">
+                                            <p className="font-mono text-sm uppercase tracking-widest text-zinc-500">Submit Flag</p>
+                                            <div className="flex gap-4">
                                                 <input
                                                     type="text"
                                                     placeholder="Flag{...}"
-                                                    className="flex-1 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3 font-mono text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
-                                                    value={inputs[selectedChallenge.id] || ""}
-                                                    onChange={(e) => handleInputChange(selectedChallenge.id, e.target.value)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit(selectedChallenge.id)}
+                                                    className="flex-1 bg-white border-2 border-black p-4 font-mono text-lg outline-none focus:shadow-[4px_4px_0px_0px_#ccff00]"
+                                                    value={flagInput}
+                                                    onChange={(e) => setFlagInput(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                                                 />
                                                 <button
-                                                    onClick={() => handleSubmit(selectedChallenge.id)}
-                                                    disabled={submitting === selectedChallenge.id || !inputs[selectedChallenge.id]}
-                                                    className="bg-primary hover:opacity-90 text-white font-medium px-6 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    onClick={handleSubmit}
+                                                    disabled={submitting === selectedChallenge.id}
+                                                    className="bg-black text-white px-8 py-4 font-bold hover:bg-retro-green hover:text-black transition-colors border-2 border-transparent hover:border-black disabled:opacity-50"
                                                 >
-                                                    {submitting === selectedChallenge.id ? "..." : "Submit"}
+                                                    {submitting === selectedChallenge.id ? "..." : "SUBMIT"}
                                                 </button>
                                             </div>
-                                            {responses[selectedChallenge.id] && (
-                                                <div className={`mt-2 text-sm font-medium ${responses[selectedChallenge.id].type === 'success'
-                                                    ? 'text-green-600 dark:text-green-400'
-                                                    : 'text-red-500 dark:text-red-400'
-                                                    }`}>
-                                                    {responses[selectedChallenge.id].message}
+                                            {response && (
+                                                <div className={`mt-2 font-bold ${response.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                                                    {'>'} {response.message}
                                                 </div>
                                             )}
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
 
+                                {/* Solved By mockup */}
+                                <div className="mt-8 text-sm font-mono text-zinc-500">
+                                    Solved by (53):
+                                    <div className="mt-1 flex flex-wrap gap-2 text-black underline decoration-dashed">
+                                        <span>Friendly Maltese Citizens</span> {'>'} <span>pasten</span> {'>'} <span>PwnSec</span> {'>'} <span>about:Blank</span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-zinc-400 font-pixel text-2xl animate-pulse">
+                                SELECT A CHALLENGE
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+            </div>
+
+            {/* 5. RIGHT SIDEBAR */}
+            <div className="hidden xl:flex w-32 border-l-2 border-retro-border bg-zinc-100 flex-col py-8 justify-between items-center text-zinc-400 hover:text-black transition-colors relative z-30">
+                <div className="bg-[url('/grid.png')] opacity-10 absolute inset-0 pointer-events-none"></div>
+                <Link href="/leaderboard" className="writing-vertical-rl rotate-180 text-3xl font-pixel hover:text-retro-green cursor-pointer p-6 whitespace-nowrap relative z-10">
+                    Scoreboard
+                </Link>
+                <div className="h-24 w-[2px] bg-zinc-300"></div>
+                <Link href="/profile" className="writing-vertical-rl rotate-180 text-3xl font-pixel hover:text-retro-green cursor-pointer p-6 whitespace-nowrap relative z-10">
+                    My Team
+                </Link>
+            </div>
+
+            <style jsx global>{`
+                .writing-vertical-rl {
+                    writing-mode: vertical-rl;
+                }
+                .text-shadow-retro {
+                    text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+                }
+            `}</style>
+        </div>
     );
 }

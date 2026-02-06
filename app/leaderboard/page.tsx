@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
 
 interface Member {
     name: string | null;
@@ -62,7 +61,7 @@ export default function LeaderboardPage() {
 
     return (
         <div className="min-h-screen">
-            <Navbar />
+
             <div className="p-8 md:p-12">
                 <div className="max-w-3xl mx-auto">
                     <header className="mb-8 border-b border-zinc-200 dark:border-zinc-800 pb-6">

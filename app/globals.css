@@ -15,6 +15,18 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-merriweather);
+  --font-pixel: var(--font-press-start);
+  --font-mono-retro: var(--font-vt323);
+  --font-pixelify: var(--font-pixelify-sans);
+  --color-retro-green: #ccff00;
+  --color-retro-bg: #fdfcfc;
+  --color-retro-border: #1e1e1e;
+}
+
+.pixelify-sans {
+  font-family: var(--font-pixelify-sans);
+  font-optical-sizing: auto;
+  font-style: normal;
 }
 
 @media (prefers-color-scheme: dark) {
