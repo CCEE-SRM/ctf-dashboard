@@ -1,13 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+
+import Image from "next/image";
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Legend
+} from 'recharts';
 
 interface Member {
     name: string | null;
     email: string;
     points: number;
     profileUrl: string | null;
+}
+
+interface HistoryPoint {
+    time: string;
+    score: number;
 }
 
 interface Team {
@@ -20,13 +36,21 @@ interface Team {
         profileUrl: string | null;
     };
     members: Member[];
+    history: HistoryPoint[];
+    categoryStats?: Record<string, number>;
 }
+
+const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+import RetroLayout from "@/components/RetroLayout";
 
 export default function LeaderboardPage() {
     const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
-    const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+    const [visibleTeamIds, setVisibleTeamIds] = useState<string[]>([]);
+    const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
+    // Initial fetch
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
@@ -34,6 +58,14 @@ export default function LeaderboardPage() {
                 if (res.ok) {
                     const data = await res.json();
                     setTeams(data);
+                    // Initialize visible teams with Top 5 if not already set or empty
+                    if (visibleTeamIds.length === 0 && data.length > 0) {
+                        setVisibleTeamIds(data.slice(0, 5).map((t: Team) => t.id));
+                    }
+                    // Select first team by default if none selected
+                    if (!selectedTeamId && data.length > 0) {
+                        setSelectedTeamId(data[0].id);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch leaderboard", error);
@@ -43,147 +75,197 @@ export default function LeaderboardPage() {
         };
 
         fetchLeaderboard();
-    }, []);
+        // Poll every 30 seconds for live updates
+        const interval = setInterval(fetchLeaderboard, 30000);
+        return () => clearInterval(interval);
+    }, []); // Removed deps to avoid reset
 
-    const toggleTeam = (teamId: string) => {
-        setExpandedTeam(expandedTeam === teamId ? null : teamId);
+    const handleTeamClick = (teamId: string) => {
+        setSelectedTeamId(teamId);
+        // Add to graph if not visible
+        if (!visibleTeamIds.includes(teamId)) {
+            setVisibleTeamIds(prev => [...prev, teamId]);
+        }
     };
 
+    const selectedTeam = teams.find(t => t.id === selectedTeamId) || teams[0];
+
+    // Prepare Category Data for the selected team
+    const categoryData = selectedTeam?.categoryStats
+        ? Object.entries(selectedTeam.categoryStats).map(([name, count]) => ({ name, count }))
+        : [];
+
     if (loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-                <div className="animate-bounce text-2xl font-bold bg-gradient-to-r from-yellow-500 to-amber-600 bg-clip-text text-transparent">
-                    🏆 Loading Leaderboard...
-                </div>
-            </div>
-        );
+        return <div className="min-h-screen bg-zinc-100 flex items-center justify-center font-pixel text-xl animate-pulse">LOADING LEADERBOARD...</div>;
     }
 
     return (
-        <div className="min-h-screen">
+        <RetroLayout title="Scoreboard" activePage="leaderboard">
+            <div className="flex-1 h-full overflow-hidden p-4 md:p-8 relative">
+                <div className="max-w-7xl mx-auto h-full flex flex-col md:flex-row gap-6">
 
-            <div className="p-8 md:p-12">
-                <div className="max-w-3xl mx-auto">
-                    <header className="mb-8 border-b border-zinc-200 dark:border-zinc-800 pb-6">
-                        <h1 className="text-3xl font-serif font-bold text-foreground mb-2">
-                            Leaderboard
-                        </h1>
-                        <p className="text-zinc-500 dark:text-zinc-400 text-base font-sans">
-                            Top performing teams and contributors.
-                        </p>
-                    </header>
+                    {/* LEFT COLUMN: Leaderboard Table */}
+                    <div className="flex-1 flex flex-col min-h-0 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                        {/* Table Header */}
+                        <div className="grid grid-cols-12 gap-0 border-b-2 border-black bg-zinc-100 font-pixel text-xs md:text-sm sticky top-0 z-10 shrink-0">
+                            <div className="col-span-2 p-3 border-r-2 border-black text-center">PLACE</div>
+                            <div className="col-span-6 p-3 border-r-2 border-black">NAME</div>
+                            <div className="col-span-2 p-3 border-r-2 border-black text-center">FLAGS</div>
+                            <div className="col-span-2 p-3 text-right">SCORE</div>
+                        </div>
 
-                    <div className="flex flex-col">
-                        {teams.map((team, index) => (
-                            <div
-                                key={team.id}
-                                className={`group border-b border-zinc-100 dark:border-zinc-800 last:border-0`}
-                            >
-                                <button
-                                    onClick={() => toggleTeam(team.id)}
-                                    className="w-full flex items-center justify-between py-6 px-4 hover:opacity-80 transition-opacity outline-none"
-                                >
-                                    <div className="flex items-center gap-6">
-                                        <span className={`font-mono text-xl font-bold w-8 text-center ${index === 0 ? "text-yellow-500" :
-                                            index === 1 ? "text-zinc-400" :
-                                                index === 2 ? "text-orange-400" :
-                                                    "text-zinc-300 dark:text-zinc-600"
-                                            }`}>
-                                            {index + 1}
-                                        </span>
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-left">
-                                                <h3 className="text-lg font-serif font-bold text-foreground flex items-center gap-3">
-                                                    {team.leader?.profileUrl ? (
-                                                        <img
-                                                            src={team.leader.profileUrl}
-                                                            alt="Leader"
-                                                            className="w-8 h-8 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500 border border-zinc-200 dark:border-zinc-700">
-                                                            {team.leader?.name ? team.leader.name[0].toUpperCase() : (team.leader?.email?.[0].toUpperCase() || "?")}
-                                                        </div>
-                                                    )}
-                                                    {team.name}
-                                                </h3>
-                                                <div onClick={(e) => e.stopPropagation()}>
-                                                    <Link
-                                                        href={`/profile/${team.leader?.email ? team.leader.email.split('@')[0] : ''}`}
-                                                        className="text-xs text-zinc-400 uppercase tracking-wider font-sans ml-11 hover:text-teal-400 hover:underline transition-colors block"
-                                                    >
-                                                        {team.leader?.name || team.leader?.email || "Anonymous"}
-                                                    </Link>
-                                                </div>
+                        {/* Scrollable Table Body */}
+                        <div className="overflow-y-auto flex-1 scrollbar-hide">
+                            {teams.map((team, index) => {
+                                const isSelected = selectedTeamId === team.id;
+                                return (
+                                    <div
+                                        key={team.id}
+                                        className="contents" // Use contents to let children sit directly in the grid container
+                                    >
+                                        <div
+                                            onClick={() => handleTeamClick(team.id)}
+                                            className={`grid grid-cols-12 gap-0 border-b border-dashed border-zinc-300 cursor-pointer font-mono text-sm group transition-colors col-span-12
+                                                ${isSelected ? 'bg-retro-green text-black font-bold' : 'hover:bg-zinc-50'}
+                                            `}
+                                        >
+                                            <div className="col-span-2 p-2 border-r border-zinc-200 flex items-center justify-center">
+                                                {index + 1}
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-8">
-                                        <div className="text-right">
-                                            <div className="text-2xl font-mono font-bold text-primary">
+                                            <div className="col-span-6 p-2 border-r border-zinc-200 truncate pl-4">
+                                                {team.name}
+                                                {isSelected && <span className="block text-[10px] opacity-70">▼ EXPANDED</span>}
+                                            </div>
+                                            <div className="col-span-2 p-2 border-r border-zinc-200 text-center">
+                                                {team.history.length}
+                                            </div>
+                                            <div className="col-span-2 p-2 text-right pr-4">
                                                 {team.points}
                                             </div>
                                         </div>
-                                        <div className={`text-zinc-300 dark:text-zinc-600 transform transition-transform duration-300 ${expandedTeam === team.id ? 'rotate-180' : ''}`}>
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
-                                        </div>
-                                    </div>
-                                </button>
 
-                                {/* Expanded Details */}
-                                <div
-                                    className={`grid transition-all duration-300 ease-in-out ${expandedTeam === team.id
-                                        ? "grid-rows-[1fr] opacity-100 pb-6"
-                                        : "grid-rows-[0fr] opacity-0"
-                                        }`}
-                                >
-                                    <div className="overflow-hidden px-16">
-                                        <div className="pt-2 pl-4 border-l-2 border-zinc-100 dark:border-zinc-800 space-y-3">
-                                            {team.members.map((member, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="flex items-center justify-between text-sm"
-                                                >
-                                                    <Link
-                                                        href={`/profile/${member.email.split('@')[0]}`}
-                                                        className="flex items-center gap-3 hover:text-teal-400 hover:underline transition-colors"
-                                                    >
-                                                        {member.profileUrl ? (
-                                                            <img
-                                                                src={member.profileUrl}
-                                                                alt={member.name || `Member ${i}`}
-                                                                className="w-6 h-6 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
-                                                            />
-                                                        ) : (
-                                                            <span className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-500 border border-zinc-200 dark:border-zinc-700">
-                                                                {member.name ? member.name[0].toUpperCase() : (member.email?.[0].toUpperCase() || "?")}
-                                                            </span>
-                                                        )}
-                                                        <span className="text-zinc-600 dark:text-zinc-300 font-medium group-hover/member:text-teal-400">
-                                                            {member.name || member.email}
-                                                        </span>
-                                                    </Link>
-                                                    <span className="font-mono text-zinc-400">
-                                                        {member.points}
-                                                    </span>
+                                        {/* Expanded Member Details */}
+                                        {isSelected && (
+                                            <div className="col-span-12 bg-zinc-50 border-b border-black p-3 animate-in slide-in-from-top-2 duration-200 shadow-inner">
+                                                <div className="font-pixel text-[10px] text-zinc-400 mb-2">ROSTER_MANIFEST_</div>
+                                                <div className="flex flex-col gap-2">
+                                                    {team.members.map((member, mIndex) => (
+                                                        <div key={mIndex} className="bg-white border border-zinc-200 p-2 flex items-center gap-2 shadow-sm">
+                                                            <div className="w-6 h-6 rounded-full bg-zinc-200 flex items-center justify-center overflow-hidden shrink-0">
+                                                                {member.profileUrl ? (
+                                                                    <Image src={member.profileUrl} alt={member.name || 'User'} width={24} height={24} />
+                                                                ) : (
+                                                                    <span className="text-[10px] font-mono">?</span>
+                                                                )}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="font-bold text-xs truncate">{member.name || member.email.split('@')[0]}</div>
+                                                            </div>
+                                                            <div className="font-mono text-retro-green font-bold text-xs">
+                                                                {member.points}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {team.members.length === 0 && (
+                                                        <div className="text-zinc-400 text-xs font-mono italic">No members...</div>
+                                                    )}
                                                 </div>
-                                            ))}
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            </div>
-                        ))}
+                                );
+                            })}
+                            {teams.length === 0 && (
+                                <div className="p-8 text-center text-zinc-400 font-pixel">NO TEAMS</div>
+                            )}
+                        </div>
+                    </div>
 
-                        {teams.length === 0 && (
-                            <div className="text-center py-20 text-zinc-400 font-serif">
-                                No teams ranked yet.
+                    {/* RIGHT COLUMN: Graph & Stats */}
+                    <div className="flex-1 flex flex-col gap-6 min-h-0">
+
+                        {/* 1. Score Graph */}
+                        <div className="bg-white border-2 border-black p-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-1 min-h-[300px] flex flex-col">
+                            <div className="flex justify-between items-center mb-2 px-2 border-b-2 border-dashed border-zinc-300 pb-2 shrink-0">
+                                <h2 className="font-pixel text-lg">TOP TEAMS</h2>
+                                <span className="font-mono text-xs text-retro-green font-bold px-2 py-1 bg-black/5 rounded">
+                                    &gt; {selectedTeam?.name || "SELECT TEAM"}
+                                </span>
                             </div>
-                        )}
+
+                            <div className="flex-1 w-full min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+                                        <XAxis
+                                            dataKey="time"
+                                            type="number"
+                                            domain={['auto', 'auto']}
+                                            tick={false}
+                                            axisLine={{ stroke: '#000', strokeWidth: 2 }}
+                                        />
+                                        <YAxis
+                                            orientation="left"
+                                            tickLine={false}
+                                            axisLine={{ stroke: '#000', strokeWidth: 2 }}
+                                            tick={{ fontFamily: 'monospace', fontSize: 10 }}
+                                        />
+                                        <Tooltip
+                                            labelFormatter={(value) => new Date(value).toLocaleString()}
+                                            contentStyle={{ backgroundColor: '#fff', border: '2px solid #000', fontFamily: 'monospace' }}
+                                        />
+                                        {teams
+                                            .filter(team => visibleTeamIds.includes(team.id))
+                                            .map((team, index) => {
+                                                const isSelected = selectedTeamId === team.id;
+                                                return (
+                                                    <Line
+                                                        key={team.id}
+                                                        data={team.history.map(h => ({ ...h, time: new Date(h.time).getTime() }))}
+                                                        type="stepAfter" // Retro style step chart
+                                                        dataKey="score"
+                                                        name={team.name}
+                                                        stroke={isSelected ? '#8b5cf6' : '#555'}
+                                                        strokeWidth={isSelected ? 3 : 1}
+                                                        dot={isSelected ? { r: 4, fill: '#8b5cf6', stroke: '#fff' } : false}
+                                                        activeDot={{ r: 6, stroke: '#000', strokeWidth: 2 }}
+                                                        opacity={isSelected ? 1 : 0.3} // Fade stats for non-selected
+                                                        animationDuration={500}
+                                                    />
+                                                );
+                                            })}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* 2. Categories Solved */}
+                        <div className="bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] shrink-0 h-[200px] overflow-y-auto">
+                            <h2 className="font-pixel text-lg mb-4 border-b-2 border-dashed border-zinc-300 pb-2">CATEGORIES_SOLVED</h2>
+                            <div className="grid grid-cols-2 gap-4">
+                                {categoryData.length > 0 ? categoryData.map((cat) => (
+                                    <div key={cat.name} className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-retro-green animate-pulse"></div>
+                                        <span className="font-mono text-sm font-bold w-24 text-right">{cat.name}:</span>
+                                        <div className="flex-1 h-4 bg-zinc-100 border border-zinc-300 relative">
+                                            <div
+                                                className="h-full bg-retro-green/50"
+                                                style={{ width: `${Math.min((cat.count / 10) * 100, 100)}%` }} // Arbitrary max 10 for bar
+                                            ></div>
+                                        </div>
+                                        <span className="font-mono text-xs">{cat.count}</span>
+                                    </div>
+                                )) : (
+                                    <div className="col-span-2 text-center text-zinc-400 font-mono text-sm py-4">
+                                        NO SOLVES YET
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
-        </div>
-
+        </RetroLayout>
     );
 }
