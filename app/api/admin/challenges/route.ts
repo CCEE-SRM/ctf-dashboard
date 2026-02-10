@@ -35,7 +35,8 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                 thumbnail: thumbnail || null,
                 points: Number(points),
                 initialPoints: Number(points),
-                flag
+                flag,
+                authorId: req.user.userId
             }
         });
 

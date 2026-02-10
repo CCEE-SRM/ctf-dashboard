@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 export interface JwtPayload {
     userId: string;
     email: string;
-    role: string;
+    role: 'ADMIN' | 'USER';
 }
 
 export interface AuthenticatedRequest extends NextRequest {

@@ -5,7 +5,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_do_not_use_in_prod
 interface JwtPayload {
     userId: string;
     email: string;
-    role: string;
+    role: 'ADMIN' | 'USER';
 }
 
 export function signJwt(payload: JwtPayload): string {

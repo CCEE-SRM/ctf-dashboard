@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { signJwt } from '@/lib/jwt';
 import { NextResponse } from 'next/server';
+import { Role } from '@prisma/client';
 
 export async function POST(request: Request) {
     try {
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
         // If the DB is empty, userCount is 0. We want role='ADMIN'.
         // If the DB has users, userCount > 0. We want role='USER'.
 
-        const initialRole = userCount === 0 ? 'ADMIN' : 'USER';
+        const initialRole: Role = userCount === 0 ? Role.ADMIN : Role.USER;
 
         const user = await prisma.user.upsert({
             where: { email },

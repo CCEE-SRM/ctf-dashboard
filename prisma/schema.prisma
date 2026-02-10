@@ -9,12 +9,17 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id         String  @id @default(uuid())
   email      String  @unique
   name       String?
   profileUrl String?
-  role       String  @default("USER")
+  role       Role    @default(USER)
   points     Int     @default(0)
 
   // Relation: User belongs to a Team
@@ -24,6 +29,9 @@ model User {
   // Relation: User leads a Team
   ledTeam     Team?        @relation("TeamLeader")
   submissions Submission[]
+
+  // Relation: User created Challenges
+  createdChallenges Challenge[] @relation("CreatedChallenges")
 }
 
 model Team {
@@ -53,6 +61,10 @@ model Challenge {
   initialPoints Int      @default(0)
   visible       Boolean  @default(true)
   createdAt     DateTime @default(now())
+
+  // Relation: Challenge created by User (Admin)
+  authorId String?
+  author   User?   @relation("CreatedChallenges", fields: [authorId], references: [id])
 
   submissions Submission[]
 }
