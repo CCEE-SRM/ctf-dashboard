@@ -6,6 +6,8 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+import { getConfig } from '@/lib/config';
+
 export const GET = authenticated(async (req: AuthenticatedRequest) => {
     try {
         const userId = req.user.userId;
@@ -16,6 +18,13 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
             select: { teamId: true }
         });
         const teamId = user?.teamId;
+
+        // Read Config
+        const { dynamicScoring } = await getConfig();
+
+        // We can't easily cache the "view" if it depends on config without invalidating often.
+        // OR we fetch raw data and map it.
+        // Let's fetch raw data (cached) and then specific mapper.
 
         const cachedChallenges = await redis.get('challenges:list');
         let problems;
@@ -37,6 +46,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                     link: true,
                     thumbnail: true,
                     points: true,
+                    initialPoints: true, // Needed for static mode
                     createdAt: true,
                     // Do NOT select 'flag'
                 },
@@ -63,8 +73,9 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
 
         const solvedChallengeIds = new Set(submissions.map((s: { challengeId: string }) => s.challengeId));
 
-        const challengesWithStatus = problems.map((p: typeof problems[0]) => ({
+        const challengesWithStatus = problems.map((p: any) => ({
             ...p,
+            points: dynamicScoring ? p.points : (p.initialPoints || p.points), // Use initial if static mode
             solved: solvedChallengeIds.has(p.id)
         }));
 

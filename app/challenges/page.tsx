@@ -29,9 +29,28 @@ export default function ChallengesPage() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
+    const [eventState, setEventState] = useState<'START' | 'PAUSE' | 'STOP'>('START');
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
     useEffect(() => {
-        const fetchChallenges = async () => {
+        const handleMouseMove = (e: MouseEvent) => {
+            setMousePos({ x: e.clientX, y: e.clientY });
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
+    useEffect(() => {
+        const fetchData = async () => {
             try {
+                // Fetch Status
+                const resStatus = await fetch("/api/status");
+                if (resStatus.ok) {
+                    const data = await resStatus.json();
+                    setEventState(data.eventState);
+                }
+
+                // Fetch Challenges
                 const res = await fetch("/api/challenges", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -47,14 +66,14 @@ export default function ChallengesPage() {
                     }
                 }
             } catch (error) {
-                console.error("Failed to fetch challenges", error);
+                console.error("Failed to fetch data", error);
             } finally {
                 setLoading(false);
             }
         };
 
         if (token && !authLoading) {
-            fetchChallenges();
+            fetchData();
         } else if (!authLoading && !token) {
             setLoading(false);
         }
@@ -64,6 +83,8 @@ export default function ChallengesPage() {
     const categories = useMemo(() => {
         return Array.from(new Set(challenges.map(c => c.theme)));
     }, [challenges]);
+
+    const currentDate = new Date().toLocaleDateString('en-GB');
 
     const filteredChallenges = useMemo(() => {
         return challenges.filter(c => c.theme === selectedCategory);
@@ -84,7 +105,7 @@ export default function ChallengesPage() {
     };
 
     const handleSubmit = async () => {
-        if (!selectedChallenge || !flagInput) return;
+        if (!selectedChallenge || !flagInput || eventState !== 'START') return;
         setSubmitting(selectedChallenge.id);
         setResponse(null);
 
@@ -160,7 +181,7 @@ export default function ChallengesPage() {
                         </div>
                     </div>
 
-                    {/* Right: Announcements & Timer */}
+
                     <div className="flex items-center gap-6 relative z-10">
                         <div className="hidden md:flex items-center gap-2 border-r-2 border-zinc-300 pr-6">
                             <span className="text-5xl font-bold">⚄</span>
@@ -171,8 +192,12 @@ export default function ChallengesPage() {
                         </div>
 
                         <div className="text-right">
-                            <div className="font-mono text-sm text-zinc-400 mb-1">119.14 | 0.43</div>
-                            <div className="font-pixel text-lg md:text-xl">CTF CLOSED <span className="text-zinc-400 text-xs">06/02/2026</span></div>
+                            <div className="font-mono text-sm text-zinc-400 mb-1">
+                                {mousePos.x.toFixed(2)} | {mousePos.y.toFixed(2)}
+                            </div>
+                            <div className="font-pixel text-lg md:text-xl uppercase">
+                                EVENT {eventState} <span className="text-zinc-400 text-xs">{currentDate}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -283,6 +308,12 @@ export default function ChallengesPage() {
 
                                 {/* Submission Area */}
                                 <div className="bg-zinc-100 p-6 border-2 border-zinc-200">
+                                    {eventState !== 'START' && (
+                                        <div className="mb-6 bg-yellow-100 border-2 border-yellow-500 p-4 text-yellow-800 font-bold font-pixel text-center uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                                            ⚠️ EVENT IS {eventState === 'STOP' ? 'STOPPED' : 'PAUSED'}. SUBMISSIONS DISABLED.
+                                        </div>
+                                    )}
+
                                     {selectedChallenge.solved ? (
                                         <div className="text-green-600 font-bold text-2xl flex items-center gap-4">
                                             <span>★ FLAG CAPTURED</span>
@@ -293,16 +324,17 @@ export default function ChallengesPage() {
                                             <div className="flex gap-4">
                                                 <input
                                                     type="text"
-                                                    placeholder="Flag{...}"
-                                                    className="flex-1 bg-white border-2 border-black p-4 font-mono text-lg outline-none focus:shadow-[4px_4px_0px_0px_#ccff00]"
+                                                    disabled={eventState !== 'START'}
+                                                    placeholder={eventState === 'START' ? "Flag{...}" : "LOCKED"}
+                                                    className="flex-1 bg-white border-2 border-black p-4 font-mono text-lg outline-none focus:shadow-[4px_4px_0px_0px_#ccff00] disabled:bg-zinc-200 disabled:text-zinc-500 disabled:cursor-not-allowed"
                                                     value={flagInput}
                                                     onChange={(e) => setFlagInput(e.target.value)}
                                                     onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                                                 />
                                                 <button
                                                     onClick={handleSubmit}
-                                                    disabled={submitting === selectedChallenge.id}
-                                                    className="bg-black text-white px-8 py-4 font-bold hover:bg-retro-green hover:text-black transition-colors border-2 border-transparent hover:border-black disabled:opacity-50"
+                                                    disabled={submitting === selectedChallenge.id || eventState !== 'START'}
+                                                    className="bg-black text-white px-8 py-4 font-bold hover:bg-retro-green hover:text-black transition-colors border-2 border-transparent hover:border-black disabled:opacity-50 disabled:hover:bg-black disabled:hover:text-white disabled:cursor-not-allowed"
                                                 >
                                                     {submitting === selectedChallenge.id ? "..." : "SUBMIT"}
                                                 </button>

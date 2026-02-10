@@ -20,27 +20,65 @@ export default function AdminChallengesPage() {
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [loadingData, setLoadingData] = useState(true);
 
+    const [dynamicScoring, setDynamicScoring] = useState(true);
+
     useEffect(() => {
         if (!token) return;
 
-        const fetchChallenges = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch("/api/admin/challenges", {
+                // Fetch Challenges
+                const resChallenges = await fetch("/api/admin/challenges", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                if (res.ok) {
-                    const data = await res.json();
+                if (resChallenges.ok) {
+                    const data = await resChallenges.json();
                     setChallenges(data);
                 }
+
+                // Fetch Config
+                const resConfig = await fetch("/api/admin/config", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (resConfig.ok) {
+                    const config = await resConfig.json();
+                    setDynamicScoring(config.dynamicScoring);
+                }
             } catch (error) {
-                console.error("Failed to fetch challenges", error);
+                console.error("Failed to fetch data", error);
             } finally {
                 setLoadingData(false);
             }
         };
 
-        fetchChallenges();
+        fetchData();
     }, [token]);
+
+    const handleToggleScoring = async () => {
+        const newValue = !dynamicScoring;
+        // Optimistic update
+        setDynamicScoring(newValue);
+
+        try {
+            const res = await fetch("/api/admin/config", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ dynamicScoring: newValue })
+            });
+
+            if (!res.ok) {
+                // Revert on failure
+                setDynamicScoring(!newValue);
+                alert("Failed to update config");
+            }
+        } catch (error) {
+            console.error("Config update error", error);
+            setDynamicScoring(!newValue);
+        }
+    };
 
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this challenge? This action cannot be undone.")) return;
@@ -61,7 +99,7 @@ export default function AdminChallengesPage() {
         }
     };
 
-    if (loading || loadingData) return <div className="p-8 font-mono-retro">Loading...</div>;
+    if (loading || loadingData) return <div className="p-8 font-mono-retro text-black">Loading...</div>;
 
     if (!dbUser || dbUser.role !== 'ADMIN') {
         return <div className="p-8 text-red-600 font-pixel">Access Denied. Admins only.</div>;
@@ -73,19 +111,37 @@ export default function AdminChallengesPage() {
             <div className="absolute inset-0 bg-[url('/grid.png')] opacity-10 pointer-events-none fixed"></div>
 
             <div className="max-w-6xl mx-auto relative z-10">
-                <header className="mb-12 flex justify-between items-end border-b-4 border-black pb-6 border-dashed">
+                <header className="mb-12 flex flex-col md:flex-row justify-between items-end border-b-4 border-black pb-6 border-dashed gap-4">
                     <div>
                         <h1 className="text-5xl font-pixel mb-2 text-shadow-retro">ADMIN CONSOLE</h1>
                         <p className="text-xl font-mono-retro bg-black text-white inline-block px-2">
                             Manage Challenges & Content
                         </p>
                     </div>
-                    <Link
-                        href="/admin/challenges/create"
-                        className="bg-retro-green text-black font-bold py-3 px-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-2 font-pixel text-lg"
-                    >
-                        <span>+ NEW CHALLENGE</span>
-                    </Link>
+                    <div className="flex flex-col items-end gap-4">
+                        <div className="flex items-center gap-2 bg-white border-2 border-black p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                            <span className="font-pixel text-sm uppercase">Scoring Mode:</span>
+                            <button
+                                onClick={handleToggleScoring}
+                                className={`px-3 py-1 font-bold border-2 border-black transition-all ${dynamicScoring ? 'bg-purple-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}
+                            >
+                                DYNAMIC
+                            </button>
+                            <button
+                                onClick={handleToggleScoring}
+                                className={`px-3 py-1 font-bold border-2 border-black transition-all ${!dynamicScoring ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}
+                            >
+                                STATIC
+                            </button>
+                        </div>
+
+                        <Link
+                            href="/admin/challenges/create"
+                            className="bg-retro-green text-black font-bold py-3 px-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-2 font-pixel text-lg"
+                        >
+                            <span>+ NEW CHALLENGE</span>
+                        </Link>
+                    </div>
                 </header>
 
                 <div className="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
