@@ -4,6 +4,18 @@ import { adminOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
 
+export const GET = adminOnly(async () => {
+    try {
+        const challenges = await prisma.challenge.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+        return NextResponse.json(challenges);
+    } catch (error) {
+        console.error('Admin Fetch Challenges Error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+});
+
 export const POST = adminOnly(async (req: AuthenticatedRequest) => {
     try {
         const body = await req.json();

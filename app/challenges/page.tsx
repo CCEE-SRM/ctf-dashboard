@@ -263,12 +263,19 @@ export default function ChallengesPage() {
                                     <ReactMarkdown>{selectedChallenge.description}</ReactMarkdown>
                                 </div>
 
-                                {/* Attachment mock */}
+                                {/* Link Button */}
                                 <div className="mb-8">
-                                    <button className="bg-purple-600 text-white font-bold py-2 px-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-2 border-2 border-black">
-                                        <span>⬇ Attachment</span>
-                                        <span className="font-mono text-sm bg-black/20 px-2 rounded">file.zip</span>
-                                    </button>
+                                    <a
+                                        href={selectedChallenge.link || "#"}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex bg-purple-600 text-white font-bold py-2 px-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all items-center gap-2 border-2 border-black no-underline"
+                                    >
+                                        <span>🔗 Link</span>
+                                        <span className="font-mono text-sm bg-black/20 px-2 rounded truncate max-w-[200px]">
+                                            {selectedChallenge.link || "No Link Provided"}
+                                        </span>
+                                    </a>
                                 </div>
 
                                 {/* Separator */}

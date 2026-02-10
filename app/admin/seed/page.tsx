@@ -119,79 +119,81 @@ export default function AdminSeedPage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Loading...</div>;
-    if (!dbUser || dbUser.role !== "ADMIN") return <div className="p-8 text-center text-red-500">Access Denied</div>;
+    if (loading) return <div className="p-8 text-center font-mono-retro">Loading...</div>;
+    if (!dbUser || dbUser.role !== "ADMIN") return <div className="p-8 text-center text-red-500 font-pixel">Access Denied</div>;
 
     return (
-        <div className="min-h-screen text-zinc-900 dark:text-zinc-100 p-8 pb-32">
-            <div className="max-w-4xl mx-auto space-y-8">
-                <header className="flex items-center justify-between">
+        <div className="min-h-screen bg-zinc-100 p-8 pb-32 font-mono-retro text-black">
+            <div className="absolute inset-0 bg-[url('/grid.png')] opacity-5 pointer-events-none fixed"></div>
+
+            <div className="max-w-4xl mx-auto space-y-8 relative z-10">
+                <header className="flex items-center justify-between border-b-4 border-black pb-4">
                     <div>
-                        <h1 className="text-4xl font-extrabold tracking-tight font-serif text-foreground">
-                            Admin Database Seeder
+                        <h1 className="text-4xl font-bold font-pixel tracking-tight text-foreground mb-2">
+                            DATABASE_SEEDER // ADMIN
                         </h1>
-                        <p className="mt-2 text-zinc-600 dark:text-zinc-400 font-sans">
+                        <p className="mt-2 text-zinc-600 font-mono-retro uppercase tracking-widest bg-white inline-block px-2 border-2 border-black">
                             Bulk create teams and users.
                         </p>
                     </div>
                 </header>
 
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6">
                     {/* Mode Toggle */}
-                    <div className="flex border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="flex border-2 border-black mb-6">
                         <button
                             onClick={() => setMode("gui")}
-                            className={`flex-1 py-3 text-sm font-medium transition-colors ${mode === "gui" ? "bg-zinc-50 dark:bg-zinc-800/50 text-blue-600 border-b-2 border-blue-600" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"}`}
+                            className={`flex-1 py-3 text-lg font-pixel uppercase transition-all ${mode === "gui" ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-100"}`}
                         >
                             Visual Editor
                         </button>
                         <button
                             onClick={() => setMode("json")}
-                            className={`flex-1 py-3 text-sm font-medium transition-colors ${mode === "json" ? "bg-zinc-50 dark:bg-zinc-800/50 text-blue-600 border-b-2 border-blue-600" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"}`}
+                            className={`flex-1 py-3 text-lg font-pixel uppercase transition-all border-l-2 border-black ${mode === "json" ? "bg-black text-white" : "bg-white text-black hover:bg-zinc-100"}`}
                         >
                             JSON Input
                         </button>
                     </div>
 
-                    <div className="p-6 space-y-6">
+                    <div className="space-y-6">
                         {mode === "gui" ? (
                             <div className="space-y-8">
                                 {guiTeams.map((team, tIndex) => (
-                                    <div key={tIndex} className="p-6 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 relative group">
+                                    <div key={tIndex} className="p-6 bg-zinc-50 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative group">
                                         <button
                                             onClick={() => removeTeam(tIndex)}
-                                            className="absolute top-4 right-4 text-zinc-400 hover:text-red-500 transition-colors"
+                                            className="absolute top-0 right-0 bg-red-500 text-white w-8 h-8 flex items-center justify-center font-bold border-l-2 border-b-2 border-black hover:bg-red-600 z-10"
                                             title="Remove Team"
                                         >
-                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            X
                                         </button>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 mt-2">
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">Team Name *</label>
+                                                <label className="block text-sm font-bold font-pixel uppercase mb-1">Team Name *</label>
                                                 <input
                                                     type="text"
                                                     value={team.name}
                                                     onChange={(e) => updateTeam(tIndex, "name", e.target.value)}
-                                                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                                                    className="w-full bg-white border-2 border-black px-3 py-2 text-sm outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all font-mono-retro"
                                                     placeholder="e.g. Hackers United"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">Leader Email *</label>
+                                                <label className="block text-sm font-bold font-pixel uppercase mb-1">Leader Email *</label>
                                                 <input
                                                     type="email"
                                                     value={team.leaderEmail}
                                                     onChange={(e) => updateTeam(tIndex, "leaderEmail", e.target.value)}
-                                                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                                                    className="w-full bg-white border-2 border-black px-3 py-2 text-sm outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all font-mono-retro"
                                                     placeholder="leader@example.com"
                                                 />
                                             </div>
                                         </div>
 
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Members</span>
+                                        <div className="space-y-3 bg-white border-2 border-black p-4">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-xs font-bold font-pixel uppercase text-zinc-500">Members</span>
                                             </div>
                                             {team.members.map((member, mIndex) => (
                                                 <div key={mIndex} className="flex gap-3 items-center">
@@ -199,45 +201,45 @@ export default function AdminSeedPage() {
                                                         type="text"
                                                         value={member.name}
                                                         onChange={(e) => updateMember(tIndex, mIndex, "name", e.target.value)}
-                                                        className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                                                        className="flex-1 bg-zinc-50 border-2 border-black px-3 py-2 text-sm outline-none focus:bg-white transition-all font-mono-retro"
                                                         placeholder="Member Name"
                                                     />
                                                     <input
                                                         type="email"
                                                         value={member.email}
                                                         onChange={(e) => updateMember(tIndex, mIndex, "email", e.target.value)}
-                                                        className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                                                        className="flex-1 bg-zinc-50 border-2 border-black px-3 py-2 text-sm outline-none focus:bg-white transition-all font-mono-retro"
                                                         placeholder="member@example.com"
                                                     />
                                                     <button
                                                         onClick={() => removeMember(tIndex, mIndex)}
-                                                        className="text-zinc-400 hover:text-red-500 p-1"
+                                                        className="bg-black text-white w-8 h-8 flex items-center justify-center font-bold hover:bg-zinc-800"
                                                     >
-                                                        &times;
+                                                        -
                                                     </button>
                                                 </div>
                                             ))}
                                             <button
                                                 onClick={() => addMember(tIndex)}
-                                                className="text-xs text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1 mt-2"
+                                                className="text-xs bg-blue-100 border-2 border-dashed border-blue-500 text-blue-700 hover:bg-blue-200 font-bold px-3 py-2 w-full mt-2 uppercase font-pixel"
                                             >
-                                                + Add Member
+                                                + Add Member Slot
                                             </button>
                                         </div>
                                     </div>
                                 ))}
                                 <button
                                     onClick={addTeam}
-                                    className="w-full py-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors font-medium"
+                                    className="w-full py-4 border-4 border-dashed border-zinc-300 rounded-none text-zinc-400 hover:text-black hover:border-black transition-all font-pixel text-xl uppercase hover:bg-white"
                                 >
-                                    + Add Another Team
+                                    + Add New Team Block
                                 </button>
                             </div>
                         ) : (
                             <div className="relative">
                                 <textarea
                                     rows={15}
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-xl p-4 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-y"
+                                    className="w-full bg-black text-green-400 border-4 border-zinc-500 p-4 font-mono text-sm focus:border-green-500 outline-none transition-all resize-y shadow-inner"
                                     placeholder='[{ "name": "Team A", "leaderEmail": "...", "members": [...] }]'
                                     value={jsonInput}
                                     onChange={(e) => setJsonInput(e.target.value)}
@@ -245,15 +247,15 @@ export default function AdminSeedPage() {
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800 mt-6">
+                        <div className="flex items-center justify-between pt-6 border-t-4 border-black border-dashed mt-8">
                             <div className="flex-1">
                                 {status === "error" && (
-                                    <div className="text-red-600 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg text-sm">
+                                    <div className="text-red-800 bg-red-100 border-2 border-red-500 px-4 py-2 font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                                         🚨 {message}
                                     </div>
                                 )}
                                 {status === "success" && (
-                                    <div className="text-green-600 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg text-sm">
+                                    <div className="text-green-800 bg-green-100 border-2 border-green-500 px-4 py-2 font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                                         ✅ {message}
                                     </div>
                                 )}
@@ -261,12 +263,12 @@ export default function AdminSeedPage() {
                             <button
                                 onClick={handleSeed}
                                 disabled={status === "loading"}
-                                className={`ml-4 px-6 py-3 rounded-xl font-semibold text-white shadow-lg transition-all transform hover:scale-105 active:scale-95 ${status === "loading"
+                                className={`ml-4 px-8 py-4 font-bold text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all font-pixel text-lg uppercase border-2 border-black ${status === "loading"
                                     ? "bg-zinc-400 cursor-not-allowed"
-                                    : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/30"
+                                    : "bg-retro-green text-black hover:bg-green-400"
                                     }`}
                             >
-                                {status === "loading" ? "Processing..." : "Seed Database"}
+                                {status === "loading" ? "PROCESSING..." : "SEED DATABASE >>"}
                             </button>
                         </div>
                     </div>

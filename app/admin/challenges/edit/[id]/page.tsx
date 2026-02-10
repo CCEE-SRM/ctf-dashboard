@@ -1,28 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
-export default function CreateChallengePage() {
+export default function EditChallengePage({ params }: { params: Promise<{ id: string }> }) {
     const { token, dbUser, loading } = useAuth();
     const router = useRouter();
+    const { id } = use(params);
 
     const [form, setForm] = useState({
         title: "",
         description: "",
-        theme: "Web", // Default theme
+        theme: "Web",
         link: "",
         thumbnail: "",
         points: 100,
-        flag: ""
+        flag: "",
+        visible: true
     });
 
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [message, setMessage] = useState("");
+    const [loadingData, setLoadingData] = useState(true);
+
+    useEffect(() => {
+        if (!token) return;
+
+        const fetchChallenge = async () => {
+            try {
+                const res = await fetch("/api/admin/challenges", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const challenge = data.find((c: any) => c.id === id);
+                    if (challenge) {
+                        setForm({
+                            title: challenge.title,
+                            description: challenge.description,
+                            theme: challenge.theme,
+                            link: challenge.link || "",
+                            thumbnail: challenge.thumbnail || "",
+                            points: challenge.points,
+                            flag: challenge.flag || "",
+                            visible: challenge.visible
+                        });
+                    } else {
+                        setMessage("Challenge not found.");
+                        setStatus("error");
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch challenge", error);
+                setMessage("Failed to load challenge data.");
+            } finally {
+                setLoadingData(false);
+            }
+        };
+
+        fetchChallenge();
+    }, [token, id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
+        setForm({ ...form, [e.target.name]: value });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -31,8 +74,8 @@ export default function CreateChallengePage() {
         setMessage("");
 
         try {
-            const res = await fetch("/api/admin/challenges", {
-                method: "POST",
+            const res = await fetch(`/api/admin/challenges/${id}`, {
+                method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
@@ -40,17 +83,14 @@ export default function CreateChallengePage() {
                 body: JSON.stringify(form)
             });
 
-            const data = await res.json();
-
             if (res.ok) {
                 setStatus("success");
-                setMessage("Challenge created successfully!");
-                // Reset form or redirect? 
-                // Let's reset for now so they can add more
-                setForm(prev => ({ ...prev, title: "", description: "", flag: "", link: "", thumbnail: "" }));
+                setMessage("Challenge updated successfully!");
+                setTimeout(() => router.push("/admin/challenges"), 1500);
             } else {
+                const data = await res.json();
                 setStatus("error");
-                setMessage(data.error || "Failed to create challenge.");
+                setMessage(data.error || "Failed to update challenge.");
             }
         } catch {
             setStatus("error");
@@ -58,23 +98,37 @@ export default function CreateChallengePage() {
         }
     };
 
-    if (loading) return <div className="p-8 font-mono-retro">Loading...</div>;
+    if (loading || loadingData) return <div className="p-8 font-mono-retro">Loading...</div>;
 
     if (!dbUser || dbUser.role !== 'ADMIN') {
         return <div className="p-8 text-red-600 font-pixel">Access Denied. Admins only.</div>;
     }
 
     return (
-        <div className="min-h-screen bg-zinc-100 p-8 font-mono-retro text-black">
+        <div className="min-h-screen bg-zinc-100 text-black p-8 font-mono-retro">
             <div className="absolute inset-0 bg-[url('/grid.png')] opacity-5 pointer-events-none fixed"></div>
 
             <div className="max-w-3xl mx-auto relative z-10">
                 <header className="mb-8 border-b-4 border-black pb-4">
-                    <h1 className="text-4xl font-bold font-pixel mb-2">NEW CHALLENGE // CREATE</h1>
-                    <p className="text-zinc-600 font-mono-retro uppercase tracking-widest">Add a new CTF challenge to the platform.</p>
+                    <h1 className="text-4xl font-bold font-pixel mb-2">EDIT CHALLENGE // UPDATE</h1>
+                    <p className="text-zinc-600 font-mono-retro uppercase tracking-widest">Update challenge details and visibility.</p>
                 </header>
 
                 <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+
+                    <div className="flex items-center gap-4 mb-6 p-4 bg-zinc-200 border-2 border-black border-dashed">
+                        <input
+                            type="checkbox"
+                            name="visible"
+                            id="visible"
+                            checked={form.visible}
+                            onChange={handleChange as any}
+                            className="w-6 h-6 border-2 border-black rounded-none focus:ring-0 text-black cursor-pointer"
+                        />
+                        <label htmlFor="visible" className="font-bold font-pixel text-xl cursor-pointer select-none uppercase">
+                            VISIBLE TO PLAYERS?
+                        </label>
+                    </div>
 
                     <div>
                         <label className="block text-lg font-bold font-pixel uppercase mb-2">Title</label>
@@ -85,7 +139,6 @@ export default function CreateChallengePage() {
                             className="w-full bg-zinc-50 border-2 border-black p-3 font-mono-retro focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow"
                             value={form.title}
                             onChange={handleChange}
-                            placeholder="ENTER CHALLENGE TITLE..."
                         />
                     </div>
 
@@ -96,7 +149,6 @@ export default function CreateChallengePage() {
                             required
                             rows={6}
                             className="w-full bg-zinc-50 border-2 border-black p-3 font-mono-retro text-sm focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-                            placeholder="## Problem Description..."
                             value={form.description}
                             onChange={handleChange}
                         />
@@ -135,24 +187,22 @@ export default function CreateChallengePage() {
                     </div>
 
                     <div>
-                        <label className="block text-lg font-bold font-pixel uppercase mb-2">Thumbnail URL (Optional)</label>
+                        <label className="block text-lg font-bold font-pixel uppercase mb-2">Thumbnail URL</label>
                         <input
                             type="text"
                             name="thumbnail"
                             className="w-full bg-zinc-50 border-2 border-black p-3 font-mono-retro focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-                            placeholder="https://... (e.g. imgur.com/image.png)"
                             value={form.thumbnail}
                             onChange={handleChange}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-lg font-bold font-pixel uppercase mb-2">Resource Link (Optional)</label>
+                        <label className="block text-lg font-bold font-pixel uppercase mb-2">Resource Link</label>
                         <input
                             type="text"
                             name="link"
                             className="w-full bg-zinc-50 border-2 border-black p-3 font-mono-retro focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-                            placeholder="https://..."
                             value={form.link}
                             onChange={handleChange}
                         />
@@ -165,7 +215,6 @@ export default function CreateChallengePage() {
                             name="flag"
                             required
                             className="w-full bg-red-50 border-2 border-red-500 p-3 font-mono-retro focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(239,68,68,1)] transition-shadow"
-                            placeholder="Flag{...}"
                             value={form.flag}
                             onChange={handleChange}
                         />
@@ -191,7 +240,7 @@ export default function CreateChallengePage() {
                                 disabled={status === 'loading'}
                                 className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 font-pixel text-lg uppercase"
                             >
-                                {status === 'loading' ? 'CREATING...' : 'CREATE CHALLENGE'}
+                                {status === 'loading' ? 'SAVING...' : 'SAVE CHANGES'}
                             </button>
                         </div>
                     </div>
