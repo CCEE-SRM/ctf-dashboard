@@ -16,6 +16,22 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                 profileUrl: true,
                 points: true,
                 role: true,
+                team: {
+                    select: {
+                        id: true,
+                        name: true,
+                        code: true,
+                        points: true,
+                        members: {
+                            select: {
+                                id: true,
+                                name: true,
+                                profileUrl: true,
+                                points: true
+                            }
+                        }
+                    }
+                },
                 submissions: {
                     where: { isCorrect: true },
                     orderBy: { createdAt: 'desc' },
@@ -50,11 +66,13 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
 
         return NextResponse.json({
             user: {
+                id: userProfile.id,
                 name: userProfile.name,
                 email: userProfile.email,
                 profileUrl: userProfile.profileUrl,
                 points: userProfile.points,
-                role: userProfile.role
+                role: userProfile.role,
+                team: userProfile.team // Return full team object
             },
             solvedChallenges
         });

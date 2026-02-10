@@ -37,6 +37,7 @@ model User {
 model Team {
   id     String @id @default(uuid())
   name   String
+  code   String @unique // 4-digit join code
   points Int    @default(0)
 
   // Relation: Team has multiple members

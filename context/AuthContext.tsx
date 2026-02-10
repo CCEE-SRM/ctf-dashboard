@@ -1,22 +1,23 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import {
     User,
     onAuthStateChanged,
     signInWithPopup,
     signOut,
-    UserCredential
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    signInWithGoogle: () => Promise<void>;
+    signInWithGoogle: (options?: { mode?: 'REGISTER' | 'JOIN'; teamName?: string; teamCode?: string }) => Promise<void>;
     logout: () => Promise<void>;
     dbUser: any | null; // Placeholder for Prisma User type
     token: string | null;
+    error: string | null;
+    setError: (error: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,6 +27,8 @@ const AuthContext = createContext<AuthContextType>({
     logout: async () => { },
     dbUser: null,
     token: null,
+    error: null,
+    setError: () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -35,9 +38,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [dbUser, setDbUser] = useState<any | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // Sync user with database
     const [syncedUid, setSyncedUid] = useState<string | null>(null);
+
+    // Store registration data temporarily to pass to syncUserToDb
+    const registrationDataRef = useRef<{ mode?: 'REGISTER' | 'JOIN'; teamName?: string; teamCode?: string } | null>(null);
 
     const syncUserToDb = async (firebaseUser: User) => {
         // Prevent re-syncing the same user if we already have data
@@ -46,25 +53,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         try {
+            setError(null);
             const idToken = await firebaseUser.getIdToken();
+
+            const body = {
+                ...registrationDataRef.current
+            };
+
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${idToken}`,
                 },
+                body: JSON.stringify(body),
             });
 
+            const data = await response.json();
+
             if (response.ok) {
-                const data = await response.json();
                 setDbUser(data.user);
                 // Optionally store data.token (JWT) here
                 console.log("App Token:", data.token);
                 setToken(data.token);
                 setSyncedUid(firebaseUser.uid);
+                // Clear registration data after success
+                registrationDataRef.current = null;
+            } else {
+                console.error("Login API Error:", data.error);
+                setError(data.error || "Login failed");
+                if (data.requiresRegistration) {
+                    // If backend says registration required, we might need to handle it?
+                    // Actually, for now, just showing error is enough.
+                    // The user is authenticated in Firebase but not in DB.
+                    // We might want to signOut() here to force them to try again with registration?
+                    // Let's decide: Yes, if DB login fails (e.g. requires registration but no mode provided), 
+                    // we should sign out so they aren't stuck in "Firebase logged in but not App logged in" state.
+                    if (data.requiresRegistration) {
+                        await signOut(auth);
+                        setDbUser(null);
+                        setUser(null);
+                    }
+                }
             }
         } catch (error) {
             console.error("Failed to sync user to DB", error);
+            setError("Network error during login");
         }
     };
 
@@ -84,14 +118,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => unsubscribe();
     }, []);
 
-    const signInWithGoogle = async () => {
+    const signInWithGoogle = async (options?: { mode?: 'REGISTER' | 'JOIN'; teamName?: string; teamCode?: string }) => {
         try {
+            setError(null);
+            if (options) {
+                registrationDataRef.current = options;
+            }
             await signInWithPopup(auth, googleProvider);
         } catch (error: any) {
             if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
                 console.warn("Google Sign-In was cancelled by the user.");
             } else {
                 console.error("Error signing in with Google", error);
+                setError("Failed to sign in with Google");
             }
         }
     };
@@ -105,7 +144,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout, dbUser, token }}>
+        <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout, dbUser, token, error, setError }}>
             {children}
         </AuthContext.Provider>
     );

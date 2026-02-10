@@ -18,6 +18,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Server Configuration Error' }, { status: 500 });
         }
 
+        // Parse Body for extra params
+        const body = await request.json().catch(() => ({}));
+        const { mode, teamName, teamCode } = body;
+
         // 1. Verify Token via Google Identity Toolkit REST API
         const googleRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
             method: 'POST',
@@ -38,38 +42,111 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Email is required in token' }, { status: 400 });
         }
 
-        // 2. Check and Update User
-        // 2. Check and Update User
-        // Check if this is the first user to make them ADMIN
-        const userCount = await prisma.user.count();
-        // If user count is 0, this will be the first user, so make them ADMIN.
-        // Note: If the user already exists, this 'role' variable won't be used in the 'create' block, so their existing role validates.
-        // However, if we are upserting an existing user, count is at least 1.
-        // Actually, better logic: If we are creating, checks count.
-
-        // Let's use a simpler heuristic for the role in 'create': 
-        // We can't easily know if 'upsert' is creating or updating without checking first or checking result.
-        // But we only care about 'role' in 'create'.
-        // If the DB is empty, userCount is 0. We want role='ADMIN'.
-        // If the DB has users, userCount > 0. We want role='USER'.
-
-        const initialRole: Role = userCount === 0 ? Role.ADMIN : Role.USER;
-
-        const user = await prisma.user.upsert({
+        // 2. Check if User Exists
+        let user = await prisma.user.findUnique({
             where: { email },
-            update: {
-                name: displayName || null,
-                profileUrl: photoUrl || null,
-            },
-            create: {
-                email,
-                name: displayName || null,
-                profileUrl: photoUrl || null,
-                role: initialRole,
-            },
+            include: { team: true }
         });
 
-        // 3. Generate Custom JWT
+        // 3. Handle Registration / Login Logic
+        if (!user) {
+            // New User - Requires Team Registration or Join
+            if (!mode) {
+                return NextResponse.json({ error: 'User not found. Please Register or Join a Team.', requiresRegistration: true }, { status: 404 });
+            }
+
+            // Determine Role (First user is ADMIN)
+            const userCount = await prisma.user.count();
+            const initialRole: Role = userCount === 0 ? Role.ADMIN : Role.USER;
+
+            if (mode === 'REGISTER') {
+                if (!teamName || teamName.trim().length < 3) {
+                    return NextResponse.json({ error: 'Team name is required (min 3 chars)' }, { status: 400 });
+                }
+
+                // Generate 4-digit code
+                const code = Math.floor(1000 + Math.random() * 9000).toString();
+
+                // Transaction: Create User -> Create Team -> Link User as Leader
+                // Note: Cyclic dependency (Team needs Leader, User needs Team).
+                // Solution: Create User first, Create Team, Update User.
+
+                try {
+                    await prisma.$transaction(async (tx) => {
+                        // 1. Create User
+                        const newUser = await tx.user.create({
+                            data: {
+                                email,
+                                name: displayName || null,
+                                profileUrl: photoUrl || null,
+                                role: initialRole,
+                            }
+                        });
+
+                        // 2. Create Team
+                        const newTeam = await tx.team.create({
+                            data: {
+                                name: teamName,
+                                code: code,
+                                leaderId: newUser.id,
+                                members: {
+                                    connect: { id: newUser.id }
+                                }
+                            }
+                        });
+
+                        // Refetch user with team
+                        user = await tx.user.findUnique({
+                            where: { id: newUser.id },
+                            include: { team: true }
+                        });
+                    });
+                } catch (e: any) {
+                    if (e.code === 'P2002') { // Unique constraint violation
+                        return NextResponse.json({ error: 'Team name or code already exists. Try again.' }, { status: 409 });
+                    }
+                    throw e;
+                }
+
+            } else if (mode === 'JOIN') {
+                if (!teamCode || teamCode.length !== 4) {
+                    return NextResponse.json({ error: 'Valid 4-digit Team Code is required' }, { status: 400 });
+                }
+
+                const team = await prisma.team.findUnique({
+                    where: { code: teamCode }
+                });
+
+                if (!team) {
+                    return NextResponse.json({ error: 'Team not found with this code' }, { status: 404 });
+                }
+
+                // Create User and Link to Team
+                user = await prisma.user.create({
+                    data: {
+                        email,
+                        name: displayName || null,
+                        profileUrl: photoUrl || null,
+                        role: initialRole,
+                        team: {
+                            connect: { id: team.id }
+                        }
+                    },
+                    include: { team: true }
+                });
+            } else {
+                return NextResponse.json({ error: 'Invalid mode' }, { status: 400 });
+            }
+        } else {
+            // User exists - just update profile info if needed (optional) and log in
+            // We can skip profile update for speed or do it asynchronously
+        }
+
+        if (!user) {
+            return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+        }
+
+        // 4. Generate Custom JWT
         const token = signJwt({
             userId: String(user.id),
             email: user.email,
