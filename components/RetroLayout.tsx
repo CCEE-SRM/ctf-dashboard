@@ -7,12 +7,17 @@ import { useAuth } from "@/context/AuthContext";
 interface RetroLayoutProps {
     children: ReactNode;
     title: string; // Text for the left vertical sidebar (e.g., "Challenges", "Scoreboard")
-    activePage?: 'challenges' | 'leaderboard' | 'profile' | 'announcements';
+    activePage?: 'challenges' | 'leaderboard' | 'profile';
 }
 
 export default function RetroLayout({ children, title, activePage }: RetroLayoutProps) {
     const { token, user } = useAuth();
     const [eventState, setEventState] = useState<'START' | 'PAUSE' | 'STOP'>('START');
+    const [stats, setStats] = useState<{
+        topTeam: { name: string, points: number } | null,
+        myTeam: { name: string, points: number, rank: number } | null,
+        announcementCount: number
+    }>({ topTeam: null, myTeam: null, announcementCount: 0 });
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const currentDate = new Date().toLocaleDateString('en-GB');
 
@@ -27,17 +32,26 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
     useEffect(() => {
         const fetchStatus = async () => {
             try {
-                const res = await fetch("/api/status");
+                const res = await fetch("/api/status", {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
                 if (res.ok) {
                     const data = await res.json();
                     setEventState(data.eventState);
+                    setStats({
+                        topTeam: data.topTeam,
+                        myTeam: data.myTeam,
+                        announcementCount: data.announcementCount || 0
+                    });
                 }
             } catch (error) {
                 console.error("Failed to fetch status", error);
             }
         };
         fetchStatus();
-    }, []);
+        const interval = setInterval(fetchStatus, 30000); // Polling status every 30s
+        return () => clearInterval(interval);
+    }, [token]);
 
     return (
         <div className="flex h-screen overflow-hidden bg-retro-bg text-black font-mono-retro">
@@ -47,38 +61,44 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
                 <div className="h-24 border-b-2 border-retro-border bg-zinc-100 flex items-center justify-between px-6 shrink-0 relative z-20">
                     <div className="absolute inset-0 bg-[url('/grid.png')] opacity-5 pointer-events-none"></div>
 
-                    {/* Left: Icon & Status */}
+                    {/* Left: Icon & HUD Status */}
                     <div className="flex items-center gap-6 relative z-10">
                         <div className="text-5xl animate-bounce">
                             {title === 'Scoreboard' ? '🏁' : '🚩'}
                         </div>
                         <div className="h-12 w-[2px] bg-zinc-300"></div>
-                        <div className="font-pixel text-xs md:text-sm text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                            <div className={`w-2 h-2 ${token ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-                            [{token ? `OPERATIVE: ${user?.displayName || "USER"}` : "NOT LOGGED IN"}]
+                        <div className="flex flex-col gap-1">
+                            {token && stats.topTeam && (
+                                <div className="font-pixel text-[10px] text-zinc-500 uppercase tracking-tight flex items-center gap-1">
+                                    <span className="text-retro-green">●</span> TOP: {stats.topTeam.name} - {stats.topTeam.points} PTS
+                                </div>
+                            )}
+                            <div className="font-pixel text-xs md:text-sm text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                                <div className={`w-2 h-2 ${token ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                                {token ? (
+                                    stats.myTeam ? (
+                                        <span>YOU: #{stats.myTeam.rank} - {stats.myTeam.points} PTS</span>
+                                    ) : (
+                                        <span>OPERATIVE: {user?.displayName || "USER"}</span>
+                                    )
+                                ) : (
+                                    "NOT LOGGED IN"
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Center: D-Pad / Decorative */}
-                    <div className="hidden md:flex items-center justify-center border-2 border-zinc-300 bg-white p-1 shadow-sm mx-4">
-                        <div className="grid grid-cols-5 gap-[2px]">
-                            {[...Array(15)].map((_, i) => (
-                                <div key={i} className={`w-1 h-1 ${i % 2 === 0 ? 'bg-black' : 'bg-transparent'}`}></div>
-                            ))}
-                        </div>
-                    </div>
 
                     {/* Right: Info */}
                     <div className="flex items-center gap-6 relative z-10">
                         <div className="hidden md:flex items-center gap-2 border-r-2 border-zinc-300 pr-6">
-                            <span className="text-5xl font-bold">⚄</span>
                             <div className="flex flex-col">
                                 <span className="font-pixel text-xs text-zinc-400">UPDATES</span>
                                 <Link
                                     href="/announcements"
                                     className="font-mono text-lg font-bold leading-none hover:text-retro-green hover:underline cursor-pointer transition-colors"
                                 >
-                                    ANNOUNCEMENTS (13)
+                                    ANNOUNCEMENTS ({stats.announcementCount})
                                 </Link>
                             </div>
                         </div>

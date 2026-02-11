@@ -1,10 +1,9 @@
 
 import { adminOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
-
-const prisma = new PrismaClient();
 
 // POST /api/admin/announcements - Create an announcement (Admin only)
 export const POST = adminOnly(async (req: AuthenticatedRequest) => {
@@ -23,6 +22,10 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                 authorId: userId,
             },
         });
+
+        // Invalidate Cache
+        await redis.del('announcements:list');
+        console.log('[CACHE INVALIDATE] Deleted announcements:list');
 
         return NextResponse.json(announcement);
     } catch (error) {
@@ -45,6 +48,10 @@ export const DELETE = adminOnly(async (req: AuthenticatedRequest) => {
         await prisma.announcement.delete({
             where: { id },
         });
+
+        // Invalidate Cache
+        await redis.del('announcements:list');
+        console.log('[CACHE INVALIDATE] Deleted announcements:list');
 
         return NextResponse.json({ success: true });
     } catch (error) {
