@@ -18,7 +18,7 @@ export default function LoginButton() {
 
     return (
         <button
-            onClick={signInWithGoogle}
+            onClick={() => signInWithGoogle()}
             className="group flex w-full sm:w-auto items-center justify-center gap-3 rounded-full bg-white px-8 py-3 text-sm font-medium text-zinc-900 transition-all hover:bg-zinc-100 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 ring-offset-zinc-950 shadow-lg shadow-zinc-900/20"
         >
             <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">

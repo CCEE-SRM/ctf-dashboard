@@ -71,6 +71,7 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                 },
                 create: {
                     name: teamData.name,
+                    code: Math.floor(1000 + Math.random() * 9000).toString(), // Generate random 4-digit code
                     leader: { connect: { id: leaderRecord.id } },
                     members: {
                         connect: allMemberEmails.map(email => ({ email }))
