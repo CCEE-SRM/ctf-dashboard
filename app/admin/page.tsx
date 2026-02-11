@@ -139,6 +139,12 @@ export default function AdminDashboardPage() {
                             Manage Challenges
                         </Link>
                         <Link
+                            href="/admin/announcements"
+                            className="bg-zinc-200 text-black font-bold py-2 px-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all font-pixel uppercase"
+                        >
+                            Manage Announcements
+                        </Link>
+                        <Link
                             href="/admin/seed"
                             className="bg-zinc-200 text-black font-bold py-2 px-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all font-pixel uppercase"
                         >

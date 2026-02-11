@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 interface RetroLayoutProps {
     children: ReactNode;
     title: string; // Text for the left vertical sidebar (e.g., "Challenges", "Scoreboard")
-    activePage?: 'challenges' | 'leaderboard' | 'profile';
+    activePage?: 'challenges' | 'leaderboard' | 'profile' | 'announcements';
 }
 
 export default function RetroLayout({ children, title, activePage }: RetroLayoutProps) {
@@ -74,7 +74,12 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
                             <span className="text-5xl font-bold">⚄</span>
                             <div className="flex flex-col">
                                 <span className="font-pixel text-xs text-zinc-400">UPDATES</span>
-                                <span className="font-mono text-lg font-bold leading-none">ANNOUNCEMENTS (13)</span>
+                                <Link
+                                    href="/announcements"
+                                    className="font-mono text-lg font-bold leading-none hover:text-retro-green hover:underline cursor-pointer transition-colors"
+                                >
+                                    ANNOUNCEMENTS (13)
+                                </Link>
                             </div>
                         </div>
                         <div className="text-right">
@@ -90,7 +95,7 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
 
                 <div className="flex flex-1 overflow-hidden relative">
                     {/* 1. LEFT SIDEBAR: Vertical Text */}
-                    <div className="hidden md:flex w-24 border-r-2 border-retro-border bg-zinc-100 items-center justify-center relative shadow-inner">
+                    <div className="hidden md:flex w-40 border-r-2 border-retro-border bg-zinc-100 items-center justify-center relative shadow-inner">
                         <div className="bg-[url('/grid.png')] opacity-10 absolute inset-0"></div>
                         <div className="-rotate-90 whitespace-nowrap text-6xl font-pixel tracking-widest text-shadow-retro select-none">
                             {title}
@@ -120,7 +125,9 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
 
                 <div className="h-24 w-[2px] bg-zinc-300"></div>
 
-                <Link href="/profile" className="writing-vertical-rl rotate-180 text-3xl font-pixel hover:text-retro-green cursor-pointer p-6 whitespace-nowrap relative z-10">
+                <div className="h-24 w-[2px] bg-zinc-300"></div>
+
+                <Link href="/profile" className={`writing-vertical-rl rotate-180 text-3xl font-pixel cursor-pointer p-6 whitespace-nowrap relative z-10 ${activePage === 'profile' ? 'text-black' : 'hover:text-retro-green'}`}>
                     My Team
                 </Link>
             </div>

@@ -33,6 +33,7 @@ model User {
   // Relation: User created Challenges
   createdChallenges Challenge[]    @relation("CreatedChallenges")
   hintPurchases     HintPurchase[]
+  announcements     Announcement[]
 }
 
 model Team {
@@ -120,4 +121,14 @@ model HintPurchase {
   createdAt      DateTime @default(now())
 
   @@unique([teamId, hintId]) // Ensure a team only pays for a hint once
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
 }
