@@ -49,6 +49,13 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                     initialPoints: true, // Needed for static mode
                     createdAt: true,
                     // Do NOT select 'flag'
+                    hints: {
+                        select: {
+                            id: true,
+                            cost: true,
+                            content: true
+                        }
+                    }
                 },
                 orderBy: {
                     createdAt: 'desc'
@@ -75,11 +82,33 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
 
         const challengesWithStatus = problems.map((p: any) => ({
             ...p,
-            points: dynamicScoring ? p.points : (p.initialPoints || p.points), // Use initial if static mode
+            points: dynamicScoring ? p.points : (p.initialPoints || p.points),
             solved: solvedChallengeIds.has(p.id)
         }));
 
-        return NextResponse.json(challengesWithStatus);
+        // Get Hint Purchases for this user's team
+        const hintPurchases = await prisma.hintPurchase.findMany({
+            where: {
+                teamId: teamId
+            },
+            select: {
+                hintId: true
+            }
+        });
+        const purchasedHintIds = new Set(hintPurchases.map((hp: { hintId: string }) => hp.hintId));
+
+        // Attach hints to challenges
+        const challengesWithStatusAndHints = challengesWithStatus.map((c: any) => ({
+            ...c,
+            hints: (c.hints || []).map((h: any) => ({
+                id: h.id,
+                cost: h.cost,
+                content: purchasedHintIds.has(h.id) ? h.content : undefined, // Mask content if not purchased
+                purchased: purchasedHintIds.has(h.id)
+            })).sort((a: any, b: any) => a.cost - b.cost)
+        }));
+
+        return NextResponse.json(challengesWithStatusAndHints);
     } catch (error) {
         console.error('Challenges fetch error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

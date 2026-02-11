@@ -31,7 +31,8 @@ model User {
   submissions Submission[]
 
   // Relation: User created Challenges
-  createdChallenges Challenge[] @relation("CreatedChallenges")
+  createdChallenges Challenge[]    @relation("CreatedChallenges")
+  hintPurchases     HintPurchase[]
 }
 
 model Team {
@@ -44,10 +45,11 @@ model Team {
   members User[] @relation("TeamMembers")
 
   // Relation: Team has one leader
-  leaderId    String       @unique
-  leader      User         @relation("TeamLeader", fields: [leaderId], references: [id])
-  submissions Submission[]
-  leaderboard Leaderboard?
+  leaderId      String         @unique
+  leader        User           @relation("TeamLeader", fields: [leaderId], references: [id])
+  submissions   Submission[]
+  leaderboard   Leaderboard?
+  hintPurchases HintPurchase[]
 }
 
 model Challenge {
@@ -68,6 +70,7 @@ model Challenge {
   author   User?   @relation("CreatedChallenges", fields: [authorId], references: [id])
 
   submissions Submission[]
+  hints       Hint[]
 }
 
 model Submission {
@@ -94,4 +97,27 @@ model Leaderboard {
   lastSolveAt   DateTime @default(now())
   memberDetails Json // Stores snapshot of members: [{ name, profileUrl, points, email }]
   updatedAt     DateTime @updatedAt
+}
+
+model Hint {
+  id          String         @id @default(uuid())
+  content     String
+  cost        Int
+  challengeId String
+  challenge   Challenge      @relation(fields: [challengeId], references: [id])
+  purchases   HintPurchase[]
+}
+
+model HintPurchase {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  teamId         String?
+  team           Team?    @relation(fields: [teamId], references: [id])
+  hintId         String
+  hint           Hint     @relation(fields: [hintId], references: [id])
+  costAtPurchase Int
+  createdAt      DateTime @default(now())
+
+  @@unique([teamId, hintId]) // Ensure a team only pays for a hint once
 }

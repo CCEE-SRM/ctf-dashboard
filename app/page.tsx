@@ -141,7 +141,7 @@ export default function Home() {
                 onClick={() => signInWithGoogle()} // Regular login if already registered
                 className="px-8 py-4 font-mono font-bold hover:bg-zinc-100 hover:text-retro-green transition-colors flex items-center gap-2 text-lg"
               >
-                → Scoreboard
+                Login
               </button>
             </div>
             {error && (

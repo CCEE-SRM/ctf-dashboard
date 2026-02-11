@@ -24,19 +24,43 @@ export const PUT = adminOnly(async (req: AuthenticatedRequest, { params }: { par
             return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
         }
 
-        const updatedChallenge = await prisma.challenge.update({
-            where: { id: challengeId },
-            data: {
-                title,
-                description,
-                theme,
-                link,
-                points: points !== undefined ? Number(points) : undefined,
-                initialPoints: initialPoints !== undefined ? Number(initialPoints) : undefined,
-                flag,
-                visible: visible !== undefined ? Boolean(visible) : undefined,
-                thumbnail
+        const updatedChallenge = await prisma.$transaction(async (tx) => {
+            // Updated basic fields
+            const c = await tx.challenge.update({
+                where: { id: challengeId },
+                data: {
+                    title,
+                    description,
+                    theme,
+                    link,
+                    points: points !== undefined ? Number(points) : undefined,
+                    initialPoints: initialPoints !== undefined ? Number(initialPoints) : undefined,
+                    flag,
+                    visible: visible !== undefined ? Boolean(visible) : undefined,
+                    thumbnail
+                }
+            });
+
+            // Handle Hints if provided
+            if (body.hints) {
+                // Delete existing options
+                await tx.hint.deleteMany({
+                    where: { challengeId }
+                });
+
+                // Create new ones
+                if (body.hints.length > 0) {
+                    await tx.hint.createMany({
+                        data: body.hints.map((h: any) => ({
+                            challengeId,
+                            content: h.content,
+                            cost: Number(h.cost)
+                        }))
+                    });
+                }
             }
+
+            return c;
         });
 
         // Invalidate Cache

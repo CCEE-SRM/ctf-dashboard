@@ -7,7 +7,8 @@ import { NextResponse } from 'next/server';
 export const GET = adminOnly(async () => {
     try {
         const challenges = await prisma.challenge.findMany({
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: { hints: true }
         });
         return NextResponse.json(challenges);
     } catch (error) {
@@ -36,7 +37,13 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
                 points: Number(points),
                 initialPoints: Number(points),
                 flag,
-                authorId: req.user.userId
+                authorId: req.user.userId,
+                hints: {
+                    create: (body.hints || []).map((h: any) => ({
+                        content: h.content,
+                        cost: Number(h.cost)
+                    }))
+                }
             }
         });
 

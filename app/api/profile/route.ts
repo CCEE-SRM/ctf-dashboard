@@ -29,6 +29,51 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                                 profileUrl: true,
                                 points: true
                             }
+                        },
+                        submissions: {
+                            where: { isCorrect: true },
+                            orderBy: { createdAt: 'desc' },
+                            select: {
+                                id: true,
+                                createdAt: true,
+                                user: {
+                                    select: {
+                                        id: true,
+                                        name: true
+                                    }
+                                },
+                                challenge: {
+                                    select: {
+                                        id: true,
+                                        title: true,
+                                        points: true,
+                                        theme: true
+                                    }
+                                }
+                            }
+                        },
+                        hintPurchases: {
+                            orderBy: { createdAt: 'desc' },
+                            select: {
+                                id: true,
+                                createdAt: true,
+                                costAtPurchase: true,
+                                user: {
+                                    select: {
+                                        id: true,
+                                        name: true
+                                    }
+                                },
+                                hint: {
+                                    select: {
+                                        challenge: {
+                                            select: {
+                                                title: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 },
@@ -56,12 +101,26 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
         }
 
         // Transform data for cleaner frontend consumption
-        const solvedChallenges = userProfile.submissions.map((sub: typeof userProfile.submissions[0]) => ({
+        // Transform data for cleaner frontend consumption
+        // Use Team Submissions if available, otherwise User Submissions (fallback for no-team users)
+        const rawSolves = userProfile.team?.submissions || (userProfile.submissions.map(s => ({ ...s, user: { id: userProfile.id, name: userProfile.name } })));
+
+        const solvedChallenges = rawSolves.map((sub: any) => ({
             id: sub.challenge.id,
             title: sub.challenge.title,
             points: sub.challenge.points,
             theme: sub.challenge.theme,
-            solvedAt: sub.createdAt
+            solvedAt: sub.createdAt,
+            solvedBy: sub.user?.name || 'Unknown',
+            solverId: sub.user?.id
+        }));
+
+        const hintPurchases = (userProfile.team?.hintPurchases || []).map((hp: any) => ({
+            id: hp.id,
+            challengeTitle: hp.hint.challenge.title,
+            cost: hp.costAtPurchase,
+            purchasedBy: hp.user?.name || 'Unknown',
+            purchasedAt: hp.createdAt
         }));
 
         return NextResponse.json({
@@ -72,9 +131,16 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                 profileUrl: userProfile.profileUrl,
                 points: userProfile.points,
                 role: userProfile.role,
-                team: userProfile.team // Return full team object
+                team: userProfile.team ? {
+                    id: userProfile.team.id,
+                    name: userProfile.team.name,
+                    code: userProfile.team.code,
+                    points: userProfile.team.points,
+                    members: userProfile.team.members
+                } : null
             },
-            solvedChallenges
+            solvedChallenges,
+            hintPurchases
         });
 
     } catch (error) {

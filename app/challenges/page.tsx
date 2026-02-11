@@ -15,6 +15,12 @@ interface Challenge {
     points: number;
     solved: boolean;
     attachment?: string;
+    hints: {
+        id: string;
+        cost: number;
+        content?: string;
+        purchased: boolean;
+    }[];
 }
 
 export default function ChallengesPage() {
@@ -91,6 +97,51 @@ export default function ChallengesPage() {
         setSelectedChallenge(challenge);
         setFlagInput("");
         setResponse(null);
+    };
+
+    const handleBuyHint = async (hintId: string, cost: number) => {
+        if (!selectedChallenge || !confirm(`Are you sure you want to buy this hint for ${cost} points?`)) return;
+
+        try {
+            const res = await fetch("/api/challenges/hint", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({ hintId }),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                // Update local state to show hint content
+                setChallenges(prev => prev.map(c => {
+                    if (c.id === selectedChallenge.id) {
+                        return {
+                            ...c,
+                            hints: c.hints.map(h => h.id === hintId ? { ...h, content: data.content, purchased: true } : h)
+                        };
+                    }
+                    return c;
+                }));
+                // Also update selectedChallenge if it's the one modified
+                setSelectedChallenge(prev => {
+                    if (prev && prev.id === selectedChallenge.id) {
+                        return {
+                            ...prev,
+                            hints: prev.hints.map(h => h.id === hintId ? { ...h, content: data.content, purchased: true } : h)
+                        };
+                    }
+                    return prev;
+                });
+                alert(`Hint Unlocked!`);
+            } else {
+                alert(`Failed to buy hint: ${data.error || data.message}`);
+            }
+        } catch (error) {
+            console.error("Buy hint error:", error);
+            alert("Network error buying hint.");
+        }
     };
 
     const handleSubmit = async () => {
@@ -234,6 +285,41 @@ export default function ChallengesPage() {
 
                             {/* Separator */}
                             <div className="w-full h-[2px] bg-black my-8 opacity-20"></div>
+
+                            {/* HINTS SECTION */}
+                            {selectedChallenge.hints && selectedChallenge.hints.length > 0 && (
+                                <div className="mb-8">
+                                    <h3 className="font-pixel text-xl mb-4">HINTS</h3>
+                                    <div className="flex flex-col gap-4">
+                                        {selectedChallenge.hints.map((hint, idx) => (
+                                            <div key={hint.id} className="border-2 border-black p-4 bg-yellow-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="font-bold font-mono">HINT #{idx + 1}</span>
+                                                    {!hint.purchased && (
+                                                        <span className="bg-black text-white px-2 py-1 font-mono text-xs rounded">
+                                                            COST: {hint.cost} PTS
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {hint.purchased ? (
+                                                    <div className="font-mono text-lg text-zinc-800 bg-white p-3 border border-zinc-200">
+                                                        {hint.content}
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleBuyHint(hint.id, hint.cost)}
+                                                        className="w-full py-3 bg-zinc-200 border-2 border-dashed border-zinc-400 text-zinc-500 font-pixel hover:bg-retro-green hover:text-black hover:border-black transition-colors"
+                                                    >
+                                                        UNLOCK HINT
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="w-full h-[2px] bg-black my-8 opacity-20"></div>
+                                </div>
+                            )}
 
                             {/* Submission Area */}
                             <div className="bg-zinc-100 p-6 border-2 border-zinc-200">

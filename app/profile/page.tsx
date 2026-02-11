@@ -12,6 +12,16 @@ interface SolvedChallenge {
     points: number;
     theme: string;
     solvedAt: string;
+    solvedBy: string;
+    solverId: string;
+}
+
+interface HintPurchase {
+    id: string;
+    challengeTitle: string;
+    cost: number;
+    purchasedBy: string;
+    purchasedAt: string;
 }
 
 interface TeamMember {
@@ -44,6 +54,7 @@ export default function ProfilePage() {
     const router = useRouter();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [solvedChallenges, setSolvedChallenges] = useState<SolvedChallenge[]>([]);
+    const [hintPurchases, setHintPurchases] = useState<HintPurchase[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -64,6 +75,7 @@ export default function ProfilePage() {
                     const data = await res.json();
                     setProfile(data.user);
                     setSolvedChallenges(data.solvedChallenges);
+                    setHintPurchases(data.hintPurchases);
                 } else {
                     console.error("Failed to fetch profile");
                 }
@@ -226,25 +238,33 @@ export default function ProfilePage() {
                                 </div>
                             ) : (
                                 <div className="space-y-0">
-                                    <div className="grid grid-cols-12 gap-4 text-xs font-bold text-zinc-400 pb-2 px-2 border-b-2 border-black mb-2">
-                                        <div className="col-span-6 md:col-span-7">CHALLENGE</div>
-                                        <div className="col-span-3 md:col-span-2 text-center">CATEGORY</div>
-                                        <div className="col-span-3 text-right">POINTS</div>
+                                    <div className="grid grid-cols-12 gap-4 text-xs font-bold text-zinc-400 pb-2 px-2 border-b-2 border-black mb-2 uppercase">
+                                        <div className="col-span-5">Challenge</div>
+                                        <div className="col-span-3 text-center">User</div>
+                                        <div className="col-span-2 text-center">Cat.</div>
+                                        <div className="col-span-2 text-right">Pts</div>
                                     </div>
                                     {solvedChallenges.map((challenge, i) => (
                                         <div key={challenge.id} className={`grid grid-cols-12 gap-4 py-3 px-2 items-center hover:bg-zinc-100 transition-colors ${i !== solvedChallenges.length - 1 ? 'border-b border-dashed border-zinc-300' : ''}`}>
-                                            <div className="col-span-6 md:col-span-7">
+                                            <div className="col-span-5">
                                                 <div className="font-bold font-mono text-sm truncate">{challenge.title}</div>
                                                 <div className="text-[10px] text-zinc-400 font-mono">
-                                                    {new Date(challenge.solvedAt).toLocaleDateString()} {new Date(challenge.solvedAt).toLocaleTimeString()}
+                                                    {new Date(challenge.solvedAt).toLocaleDateString()} {new Date(challenge.solvedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
                                             </div>
-                                            <div className="col-span-3 md:col-span-2 text-center">
-                                                <span className="font-mono text-[10px] bg-black text-white px-2 py-0.5 uppercase">
-                                                    {challenge.theme}
+                                            <div className="col-span-3 text-center truncate font-mono text-xs">
+                                                {challenge.solverId === profile.id ? (
+                                                    <span className="bg-zinc-200 px-1 border border-zinc-400 font-bold">YOU</span>
+                                                ) : (
+                                                    <span className="text-zinc-600">{challenge.solvedBy}</span>
+                                                )}
+                                            </div>
+                                            <div className="col-span-2 text-center">
+                                                <span className="font-mono text-[10px] bg-black text-white px-2 py-0.5 uppercase truncate inline-block max-w-full">
+                                                    {challenge.theme.substring(0, 4)}
                                                 </span>
                                             </div>
-                                            <div className="col-span-3 text-right font-mono font-bold text-retro-green">
+                                            <div className="col-span-2 text-right font-mono font-bold text-retro-green text-sm">
                                                 +{challenge.points}
                                             </div>
                                         </div>
@@ -253,6 +273,43 @@ export default function ProfilePage() {
                             )}
 
                         </div>
+
+                        {/* HINT LOG - Only show if in a team or has purchases */}
+                        {(profile.team || hintPurchases.length > 0) && (
+                            <div className="bg-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                <h2 className="font-pixel text-lg mb-6 border-b-2 border-black pb-2">HINT_PURCHASE_LOG</h2>
+
+                                {hintPurchases.length === 0 ? (
+                                    <div className="py-8 text-center text-zinc-400 font-mono text-xs italic border-2 border-dashed border-zinc-200">
+                                        NO HINTS PURCHASED YET. KEEP IT CLEAN!
+                                    </div>
+                                ) : (
+                                    <div className="space-y-0">
+                                        <div className="grid grid-cols-12 gap-4 text-xs font-bold text-zinc-400 pb-2 px-2 border-b-2 border-black mb-2 uppercase">
+                                            <div className="col-span-6">Challenge Strategy</div>
+                                            <div className="col-span-3 text-center">Purchased By</div>
+                                            <div className="col-span-3 text-right">Cost</div>
+                                        </div>
+                                        {hintPurchases.map((hint, i) => (
+                                            <div key={hint.id} className={`grid grid-cols-12 gap-4 py-3 px-2 items-center hover:bg-red-50 transition-colors ${i !== hintPurchases.length - 1 ? 'border-b border-dashed border-zinc-300' : ''}`}>
+                                                <div className="col-span-6">
+                                                    <div className="font-bold font-mono text-sm truncate">{hint.challengeTitle}</div>
+                                                    <div className="text-[10px] text-zinc-400 font-mono">
+                                                        {new Date(hint.purchasedAt).toLocaleDateString()} {new Date(hint.purchasedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                </div>
+                                                <div className="col-span-3 text-center truncate font-mono text-xs">
+                                                    <span className="text-zinc-600">{hint.purchasedBy}</span>
+                                                </div>
+                                                <div className="col-span-3 text-right font-mono font-bold text-red-600 text-sm">
+                                                    -{hint.cost}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                 </div>

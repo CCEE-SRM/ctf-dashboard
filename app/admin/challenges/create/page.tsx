@@ -15,7 +15,8 @@ export default function CreateChallengePage() {
         link: "",
         thumbnail: "",
         points: 100,
-        flag: ""
+        flag: "",
+        hints: [] as { content: string; cost: number }[]
     });
 
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -47,7 +48,7 @@ export default function CreateChallengePage() {
                 setMessage("Challenge created successfully!");
                 // Reset form or redirect? 
                 // Let's reset for now so they can add more
-                setForm(prev => ({ ...prev, title: "", description: "", flag: "", link: "", thumbnail: "" }));
+                setForm(prev => ({ ...prev, title: "", description: "", flag: "", link: "", thumbnail: "", hints: [] }));
             } else {
                 setStatus("error");
                 setMessage(data.error || "Failed to create challenge.");
@@ -169,6 +170,67 @@ export default function CreateChallengePage() {
                             value={form.flag}
                             onChange={handleChange}
                         />
+                    </div>
+
+                    {/* HINTS */}
+                    <div className="border-t-2 border-black border-dashed pt-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <label className="block text-lg font-bold font-pixel uppercase">Hints</label>
+                            <button
+                                type="button"
+                                onClick={() => setForm(prev => ({ ...prev, hints: [...prev.hints, { content: "", cost: 50 }] }))}
+                                className="bg-zinc-200 hover:bg-zinc-300 text-black font-bold py-2 px-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none transition-all font-pixel text-sm"
+                            >
+                                + ADD HINT
+                            </button>
+                        </div>
+
+                        {form.hints.map((hint, idx) => (
+                            <div key={idx} className="flex gap-4 mb-4 items-start bg-zinc-50 p-4 border border-zinc-300">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold font-mono-retro uppercase mb-1">Hint Content</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full bg-white border-2 border-zinc-400 p-2 font-mono-retro text-sm focus:border-black focus:outline-none"
+                                        value={hint.content}
+                                        onChange={(e) => {
+                                            const newHints = [...form.hints];
+                                            newHints[idx].content = e.target.value;
+                                            setForm(prev => ({ ...prev, hints: newHints }));
+                                        }}
+                                        placeholder="Hint description..."
+                                    />
+                                </div>
+                                <div className="w-32">
+                                    <label className="block text-xs font-bold font-mono-retro uppercase mb-1">Cost</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min={0}
+                                        className="w-full bg-white border-2 border-zinc-400 p-2 font-mono-retro text-sm focus:border-black focus:outline-none"
+                                        value={hint.cost}
+                                        onChange={(e) => {
+                                            const newHints = [...form.hints];
+                                            newHints[idx].cost = Number(e.target.value);
+                                            setForm(prev => ({ ...prev, hints: newHints }));
+                                        }}
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setForm(prev => ({ ...prev, hints: prev.hints.filter((_, i) => i !== idx) }))}
+                                    className="mt-6 text-red-500 font-bold hover:text-red-700 font-mono"
+                                >
+                                    X
+                                </button>
+                            </div>
+                        ))}
+                        {form.hints.length === 0 && (
+                            <div className="text-zinc-400 italic font-mono text-sm text-center py-4 border-2 border-zinc-200 border-dashed">
+                                No hints added yet.
+                            </div>
+                        )}
                     </div>
 
                     <div className="pt-4 border-t-2 border-black border-dashed mt-6">
