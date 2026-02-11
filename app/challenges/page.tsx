@@ -21,6 +21,9 @@ interface Challenge {
         content?: string;
         purchased: boolean;
     }[];
+    author?: {
+        name: string | null;
+    };
 }
 
 export default function ChallengesPage() {
@@ -77,9 +80,23 @@ export default function ChallengesPage() {
     }, [token, authLoading]);
 
     // Derived Data
-    const categories = useMemo(() => {
-        return Array.from(new Set(challenges.map(c => c.theme)));
+    const categoryStats = useMemo(() => {
+        const stats: Record<string, { total: number; solved: number }> = {};
+        challenges.forEach(c => {
+            if (!stats[c.theme]) {
+                stats[c.theme] = { total: 0, solved: 0 };
+            }
+            stats[c.theme].total++;
+            if (c.solved) {
+                stats[c.theme].solved++;
+            }
+        });
+        return stats;
     }, [challenges]);
+
+    const categories = useMemo(() => {
+        return Object.keys(categoryStats);
+    }, [categoryStats]);
 
     const filteredChallenges = useMemo(() => {
         return challenges.filter(c => c.theme === selectedCategory);
@@ -205,6 +222,9 @@ export default function ChallengesPage() {
                             <span className={`text-4xl font-pixel block break-words leading-tight ${selectedCategory === cat ? 'animate-pulse' : ''}`}>
                                 {cat}
                             </span>
+                            <div className="text-xs font-mono mt-1 text-zinc-500 group-hover:text-black">
+                                [{categoryStats[cat].solved}/{categoryStats[cat].total}] SOLVED
+                            </div>
                             {/* Decorative Icon based on category? */}
                             <span className="absolute top-2 right-2 text-xs font-mono opacity-50 block group-hover:opacity-100">
                                 {selectedCategory === cat ? '< SELECTED' : ''}
@@ -223,13 +243,18 @@ export default function ChallengesPage() {
                         <button
                             key={challenge.id}
                             onClick={() => handleChallengeClick(challenge)}
-                            className={`p-4 border-b border-retro-border/20 text-left transition-colors flex justify-between items-baseline ${selectedChallenge?.id === challenge.id
+                            className={`p-4 border-b border-retro-border/20 text-left transition-colors flex justify-between items-center ${selectedChallenge?.id === challenge.id
                                 ? "bg-white border-l-4 border-l-black"
                                 : "hover:bg-white text-zinc-600"
                                 }`}
                         >
-                            <span className="text-xl font-bold truncate pr-2">{challenge.title.toUpperCase()}</span>
-                            <span className="text-sm font-mono">{challenge.points}pt</span>
+                            <div className="flex-1 min-w-0 pr-2">
+                                <span className="text-xl font-bold truncate block">{challenge.title.toUpperCase()}</span>
+                                <span className="text-sm font-mono block">{challenge.points}pt</span>
+                            </div>
+                            {challenge.solved && (
+                                <span className="text-retro-green text-xl">★</span>
+                            )}
                         </button>
                     ))}
                     {filteredChallenges.length === 0 && (
@@ -363,12 +388,9 @@ export default function ChallengesPage() {
                                 )}
                             </div>
 
-                            {/* Solved By mockup */}
+                            {/* Created By */}
                             <div className="mt-8 text-sm font-mono text-zinc-500">
-                                Solved by (53):
-                                <div className="mt-1 flex flex-wrap gap-2 text-black underline decoration-dashed">
-                                    <span>Friendly Maltese Citizens</span> {'>'} <span>pasten</span> {'>'} <span>PwnSec</span> {'>'} <span>about:Blank</span>
-                                </div>
+                                <span className="font-bold">By:</span> <span className="text-black">{selectedChallenge.author?.name || 'Unknown'}</span>
                             </div>
 
                         </div>

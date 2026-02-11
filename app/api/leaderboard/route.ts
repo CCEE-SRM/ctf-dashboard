@@ -22,6 +22,14 @@ export async function GET() {
                         leader: {
                             select: { name: true, email: true, profileUrl: true }
                         },
+                        members: {
+                            select: {
+                                id: true,
+                                name: true,
+                                points: true,
+                                profileUrl: true
+                            }
+                        },
                         submissions: {
                             where: { isCorrect: true },
                             select: {
@@ -65,7 +73,7 @@ export async function GET() {
                 name: entry.team.name,
                 points: entry.points,
                 leader: entry.team.leader,
-                members: entry.memberDetails,
+                members: entry.team.members, // Use fetched members
                 history,
                 categoryStats // Add this to the response
             };

@@ -55,6 +55,11 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                             cost: true,
                             content: true
                         }
+                    },
+                    author: {
+                        select: {
+                            name: true
+                        }
                     }
                 },
                 orderBy: {

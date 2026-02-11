@@ -14,102 +14,107 @@ interface SolvedChallenge {
     solvedAt: string;
 }
 
-interface UserProfile {
+interface PublicProfile {
+    id: string;
     name: string | null;
     email: string;
     profileUrl: string | null;
     points: number;
     role: string;
+    team?: {
+        id: string;
+        name: string;
+        points: number;
+    };
+    solvedChallenges: SolvedChallenge[];
 }
 
-// Since Next.js 15+, params is a Promise. We need to unwrap it.
 export default function PublicProfilePage({ params }: { params: Promise<{ username: string }> }) {
-    // Unwrap params using React.use() hook or async component pattern. 
-    // Since this is a client component ('use client'), we can use the `use` hook or just treat it as a promise in useEffect if we prefer, 
-    // but `use` is cleaner if supported. However, standard client components receive params as a promise in recent Next.js versions (app router).
-    // Let's stick to standard unwrap inside the component to be safe with types.
-    const resolvedParams = use(params);
-    const username = resolvedParams.username;
-
-    const { token, user, loading: authLoading } = useAuth();
+    const { username } = use(params);
+    const { token } = useAuth();
     const router = useRouter();
-    const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [solvedChallenges, setSolvedChallenges] = useState<SolvedChallenge[]>([]);
+    const [profile, setProfile] = useState<PublicProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!authLoading && !user) {
-            router.push("/");
-            return;
-        }
-
         const fetchProfile = async () => {
             try {
-                // Construct email from username
-                const targetEmail = `${username}@gmail.com`;
-                console.log(`Fetching profile for: ${targetEmail}`);
+                // Determine if we need auth headers. Public profiles might be viewable without login?
+                // Let's assume login is required for now as per app structure, or maybe not.
+                // The API route doesn't enforce auth middleware explicitly in my code above, 
+                // but usually good practice. However, leaderboard is public? 
+                // Let's send token if available.
 
-                const res = await fetch(`/api/profile/public?email=${targetEmail}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                const headers: HeadersInit = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const res = await fetch(`/api/profile/${username}`, {
+                    headers
                 });
 
                 if (res.ok) {
                     const data = await res.json();
-                    setProfile(data.user);
-                    setSolvedChallenges(data.solvedChallenges);
+                    setProfile(data);
                 } else {
-                    const err = await res.json();
-                    console.error("Failed to fetch profile", err);
-                    setError(err.error || "User not found or error fetching profile");
+                    setError("User not found");
                 }
-            } catch (error) {
-                console.error("Error fetching profile:", error);
-                setError("Network error");
+            } catch (err) {
+                console.error("Error fetching profile:", err);
+                setError("Failed to load profile");
             } finally {
                 setLoading(false);
             }
         };
 
-        if (token && username) {
-            fetchProfile();
-        }
-    }, [user, authLoading, token, router, username]);
+        fetchProfile();
+    }, [username, token]);
 
-    if (authLoading || loading) {
-        return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-white">Loading...</div>;
+    if (loading) {
+        return <div className="min-h-screen bg-retro-bg flex items-center justify-center font-pixel text-xl animate-pulse">LOADING DOSS_IER...</div>;
     }
 
-    if (error) {
+    if (error || !profile) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-8 text-center">
-                <h1 className="text-2xl font-bold mb-4 text-red-500">Error</h1>
-                <p className="text-zinc-400 mb-6">{error}</p>
-                <Link href="/challenges" className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors">
-                    Back to Challenges
-                </Link>
+            <div className="min-h-screen bg-retro-bg flex flex-col items-center justify-center font-mono-retro text-black p-4 text-center">
+                <h1 className="text-4xl font-pixel mb-4">404_USER_NOT_FOUND</h1>
+                <p className="text-xl mb-8">{error || "The requested user does not exist in the database."}</p>
+                <button
+                    onClick={() => router.back()}
+                    className="bg-black text-white px-6 py-3 font-bold hover:bg-retro-green hover:text-black transition-colors border-2 border-transparent hover:border-black uppercase"
+                >
+                    Return to safety
+                </button>
             </div>
         );
     }
 
-    if (!profile) return null;
-
     return (
-        <div className="min-h-screen bg-zinc-950 text-white p-8">
-            <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <Link href="/challenges" className="text-zinc-400 hover:text-white transition-colors">
-                        &larr; Back to Challenges
-                    </Link>
-                    {/* No Logout button on public profile pages of others */}
-                </div>
+        <div className="min-h-screen bg-retro-bg text-black font-mono-retro overflow-hidden relative selection:bg-retro-green selection:text-black">
+            <div className="flex-1 overflow-y-auto bg-zinc-100 p-4 md:p-8 relative min-h-screen">
+                {/* Background Grid */}
+                <div className="absolute inset-0 bg-[url('/grid.png')] opacity-10 pointer-events-none fixed"></div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                    {/* Profile Card */}
-                    <div className="md:col-span-1 bg-zinc-900 rounded-2xl p-6 border border-zinc-800 text-center">
-                        <div className="w-32 h-32 mx-auto bg-zinc-800 rounded-full mb-4 overflow-hidden relative">
+                <div className="max-w-5xl mx-auto relative z-10">
+
+                    {/* Navigation - simple back link since we removed layout */}
+                    <div className="mb-8 flex gap-4 text-xs font-mono font-bold">
+                        <button
+                            onClick={() => router.back()}
+                            className="text-zinc-500 hover:text-black hover:underline"
+                        >
+                            &lt; BACK
+                        </button>
+                        <Link href="/leaderboard" className="text-zinc-500 hover:text-retro-green hover:underline">
+                            SCOREBOARD
+                        </Link>
+                    </div>
+
+                    {/* Header Card */}
+                    <div className="bg-white border-2 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] mb-8 flex flex-col md:flex-row items-center gap-8">
+                        <div className="w-32 h-32 border-2 border-black relative overflow-hidden bg-zinc-100 shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
                             {profile.profileUrl ? (
                                 <Image
                                     src={profile.profileUrl}
@@ -118,51 +123,104 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
                                     className="object-cover"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-zinc-600">
-                                    {(profile.name || profile.email).charAt(0).toUpperCase()}
+                                <div className="w-full h-full flex items-center justify-center text-5xl font-bold font-pixel text-zinc-400">
+                                    ?
                                 </div>
                             )}
                         </div>
-                        <h1 className="text-2xl font-bold mb-1">{profile.name || "Anonymous User"}</h1>
-                        {/* Optionally hide email if privacy is a concern, but typically public profiles show identification */}
-                        <p className="text-zinc-400 text-sm mb-6">{profile.email}</p>
 
-                        <div className="bg-zinc-950 rounded-xl p-4 border border-zinc-800">
-                            <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Total Points</p>
-                            <p className="text-4xl font-mono text-teal-400 font-bold">{profile.points}</p>
+                        <div className="flex-1 text-center md:text-left">
+                            <h1 className="text-4xl font-pixel font-bold uppercase mb-2">{profile.name || "Anonymous"}</h1>
+                            <div className="flex flex-wrap justify-center md:justify-start gap-3 text-xs font-bold font-mono">
+                                <span className="bg-black text-white px-2 py-1 uppercase">{profile.role}</span>
+                                {profile.team && (
+                                    <span className="bg-retro-green text-black border border-black px-2 py-1 uppercase flex items-center gap-1">
+                                        <span>TEAM:</span>
+                                        {profile.team.name}
+                                    </span>
+                                )}
+                                <span className="bg-white border border-black px-2 py-1 uppercase">
+                                    <span className="text-zinc-500">POINTS:</span> {profile.points}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Rank Placeholder - Could calculate if passed or fetched */}
+                        <div className="text-center">
+                            <div className="text-xs font-mono text-zinc-500 font-bold mb-1">TOTAL SOLVES</div>
+                            <div className="font-pixel text-5xl">{profile.solvedChallenges.length}</div>
                         </div>
                     </div>
 
-                    {/* Stats & Solved Challenges */}
-                    <div className="md:col-span-2">
-                        <h2 className="text-xl font-bold mb-4">Solved Challenges <span className="text-zinc-500 text-sm font-normal ml-2">({solvedChallenges.length})</span></h2>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                        {solvedChallenges.length === 0 ? (
-                            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 text-center text-zinc-500">
-                                This user hasn&apos;t solved any challenges yet.
-                            </div>
-                        ) : (
-                            <div className="grid gap-4">
-                                {solvedChallenges.map((challenge) => (
-                                    <div key={challenge.id} className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 flex justify-between items-center group hover:border-zinc-700 transition-colors">
-                                        <div>
-                                            <h3 className="font-semibold">{challenge.title}</h3>
-                                            <div className="flex gap-2 mt-1">
-                                                <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">
-                                                    {challenge.theme}
-                                                </span>
-                                                <span className="text-xs text-zinc-500 py-0.5">
-                                                    {new Date(challenge.solvedAt).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="text-teal-400 font-mono font-bold">
-                                            +{challenge.points}
-                                        </div>
+                        {/* Stats / Info Column */}
+                        <div className="lg:col-span-1 space-y-6">
+                            <div className="bg-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                <h2 className="font-pixel text-lg mb-4 border-b-2 border-black pb-2">STATS_OVERVIEW</h2>
+                                <div className="space-y-4 font-mono text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-zinc-500">Member Since</span>
+                                        <span className="font-bold">2024</span> {/* Placeholder */}
                                     </div>
-                                ))}
+                                    <div className="flex justify-between">
+                                        <span className="text-zinc-500">Last Active</span>
+                                        <span className="font-bold">Recently</span> {/* Placeholder */}
+                                    </div>
+                                </div>
                             </div>
-                        )}
+
+                            {profile.team && (
+                                <div className="bg-zinc-900 text-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                    <h2 className="font-pixel text-lg mb-4 text-retro-green border-b border-zinc-700 pb-2">TEAM_AFFILIATION</h2>
+                                    <div className="text-center py-4">
+                                        <div className="text-2xl font-bold font-mono mb-1">{profile.team.name}</div>
+                                        <div className="text-xs text-zinc-500 font-mono uppercase tracking-widest">Team Points: {profile.team.points}</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Solved List Column */}
+                        <div className="lg:col-span-2">
+                            <div className="bg-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] min-h-[400px]">
+                                <h2 className="font-pixel text-lg mb-6 border-b-2 border-black pb-2">SOLVED_CHALLENGES</h2>
+
+                                {profile.solvedChallenges.length === 0 ? (
+                                    <div className="h-48 flex flex-col items-center justify-center text-zinc-400 font-mono text-sm border-2 border-dashed border-zinc-200 bg-zinc-50">
+                                        <span className="text-4xl mb-2 opacity-50">🔒</span>
+                                        <span>NO_SOLVES_RECORDED</span>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-0">
+                                        <div className="grid grid-cols-12 gap-4 text-xs font-bold text-zinc-400 pb-2 px-2 border-b-2 border-black mb-2 uppercase">
+                                            <div className="col-span-8">Challenge</div>
+                                            <div className="col-span-2 text-center">Category</div>
+                                            <div className="col-span-2 text-right">Pts</div>
+                                        </div>
+                                        {profile.solvedChallenges.map((challenge, i) => (
+                                            <div key={challenge.id} className={`grid grid-cols-12 gap-4 py-3 px-2 items-center hover:bg-zinc-50 transition-colors ${i !== profile.solvedChallenges.length - 1 ? 'border-b border-dashed border-zinc-300' : ''}`}>
+                                                <div className="col-span-8">
+                                                    <div className="font-bold font-mono text-sm truncate">{challenge.title}</div>
+                                                    <div className="text-[10px] text-zinc-400 font-mono">
+                                                        {new Date(challenge.solvedAt).toLocaleDateString()} {new Date(challenge.solvedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                </div>
+                                                <div className="col-span-2 text-center">
+                                                    <span className="font-mono text-[10px] bg-black text-white px-2 py-0.5 uppercase truncate inline-block max-w-full">
+                                                        {challenge.theme.substring(0, 4)}
+                                                    </span>
+                                                </div>
+                                                <div className="col-span-2 text-right font-mono font-bold text-retro-green text-sm">
+                                                    +{challenge.points}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
     LineChart,
     Line,
@@ -15,6 +16,7 @@ import {
 } from 'recharts';
 
 interface Member {
+    id: string; // Added id
     name: string | null;
     email: string;
     points: number;
@@ -132,8 +134,10 @@ export default function LeaderboardPage() {
                                             <div className="col-span-2 p-2 border-r border-zinc-200 flex items-center justify-center">
                                                 {index + 1}
                                             </div>
-                                            <div className="col-span-6 p-2 border-r border-zinc-200 truncate pl-4">
-                                                {team.name}
+                                            <div className="col-span-6 p-2 border-r border-zinc-200 truncate pl-4 flex items-center justify-between group/name">
+                                                <Link href={`/team/${team.id}`} className="hover:underline hover:text-blue-600 decoration-2 underline-offset-2 z-20 relative pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                                                    {team.name}
+                                                </Link>
                                                 {isSelected && <span className="block text-[10px] opacity-70">▼ EXPANDED</span>}
                                             </div>
                                             <div className="col-span-2 p-2 border-r border-zinc-200 text-center">
@@ -150,8 +154,12 @@ export default function LeaderboardPage() {
                                                 <div className="font-pixel text-[10px] text-zinc-400 mb-2">ROSTER_MANIFEST_</div>
                                                 <div className="flex flex-col gap-2">
                                                     {team.members.map((member, mIndex) => (
-                                                        <div key={mIndex} className="bg-white border border-zinc-200 p-2 flex items-center gap-2 shadow-sm">
-                                                            <div className="w-6 h-6 rounded-full bg-zinc-200 flex items-center justify-center overflow-hidden shrink-0">
+                                                        <Link
+                                                            key={mIndex}
+                                                            href={member.id ? `/profile/${member.id}` : '#'}
+                                                            className={`bg-white border border-zinc-200 p-2 flex items-center gap-2 shadow-sm transition-transform hover:translate-y-[-2px] hover:shadow-md ${!member.id ? 'pointer-events-none' : ''}`}
+                                                        >
+                                                            <div className="w-6 h-6 rounded-full bg-zinc-200 flex items-center justify-center overflow-hidden shrink-0 border border-black">
                                                                 {member.profileUrl ? (
                                                                     <Image src={member.profileUrl} alt={member.name || 'User'} width={24} height={24} />
                                                                 ) : (
@@ -159,12 +167,14 @@ export default function LeaderboardPage() {
                                                                 )}
                                                             </div>
                                                             <div className="min-w-0 flex-1">
-                                                                <div className="font-bold text-xs truncate">{member.name || member.email.split('@')[0]}</div>
+                                                                <div className="font-bold text-xs truncate group-hover:text-retro-green transition-colors">
+                                                                    {member.name || member.email?.split('@')[0] || 'Unknown'}
+                                                                </div>
                                                             </div>
                                                             <div className="font-mono text-retro-green font-bold text-xs">
                                                                 {member.points}
                                                             </div>
-                                                        </div>
+                                                        </Link>
                                                     ))}
                                                     {team.members.length === 0 && (
                                                         <div className="text-zinc-400 text-xs font-mono italic">No members...</div>
