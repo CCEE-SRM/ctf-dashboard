@@ -6,11 +6,21 @@ const CONFIG_PATH = path.join(process.cwd(), 'config.json');
 export interface AppConfig {
     dynamicScoring: boolean;
     eventState: 'START' | 'PAUSE' | 'STOP';
+    rateLimit: {
+        maxAttempts: number;
+        windowSeconds: number;
+        cooldownSeconds: number;
+    };
 }
 
 const DEFAULT_CONFIG: AppConfig = {
     dynamicScoring: false,
-    eventState: 'START'
+    eventState: 'START',
+    rateLimit: {
+        maxAttempts: 3,
+        windowSeconds: 30,
+        cooldownSeconds: 60
+    }
 };
 
 export async function getConfig(): Promise<AppConfig> {

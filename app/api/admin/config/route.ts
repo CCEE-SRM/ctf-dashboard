@@ -42,6 +42,15 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
             filteredUpdate.eventState = eventState;
         }
 
+        const { rateLimit } = body;
+        if (rateLimit) {
+            filteredUpdate.rateLimit = {
+                maxAttempts: typeof rateLimit.maxAttempts === 'number' ? rateLimit.maxAttempts : 3,
+                windowSeconds: typeof rateLimit.windowSeconds === 'number' ? rateLimit.windowSeconds : 30,
+                cooldownSeconds: typeof rateLimit.cooldownSeconds === 'number' ? rateLimit.cooldownSeconds : 60
+            };
+        }
+
         const updated = await updateConfig(filteredUpdate);
         return NextResponse.json(updated);
     } catch (error) {

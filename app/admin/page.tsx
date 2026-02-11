@@ -24,6 +24,11 @@ interface LeaderboardTeam {
 interface AppConfig {
     dynamicScoring: boolean;
     eventState: 'START' | 'PAUSE' | 'STOP';
+    rateLimit: {
+        maxAttempts: number;
+        windowSeconds: number;
+        cooldownSeconds: number;
+    };
 }
 
 export default function AdminDashboardPage() {
@@ -32,7 +37,11 @@ export default function AdminDashboardPage() {
 
     // Data State
     const [leaderboard, setLeaderboard] = useState<LeaderboardTeam[]>([]);
-    const [config, setConfig] = useState<AppConfig>({ dynamicScoring: true, eventState: 'START' });
+    const [config, setConfig] = useState<AppConfig>({
+        dynamicScoring: true,
+        eventState: 'START',
+        rateLimit: { maxAttempts: 3, windowSeconds: 30, cooldownSeconds: 60 }
+    });
     const [loadingData, setLoadingData] = useState(true);
 
     // Fetch Data
@@ -197,6 +206,45 @@ export default function AdminDashboardPage() {
                                     ? "Start High, Decay Low. Points decrease as more teams solve."
                                     : "Fixed Points. Challenges award static points regardless of solve count."}
                             </p>
+                        </div>
+
+                        {/* Rate Limit Config */}
+                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                            <h2 className="text-2xl font-pixel mb-6 border-b-2 border-black pb-2">RATE LIMITING</h2>
+                            <div className="space-y-4 font-mono-retro">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-bold text-zinc-500 uppercase">Max Attempts (X)</label>
+                                    <input
+                                        type="number"
+                                        value={config.rateLimit.maxAttempts}
+                                        onChange={(e) => handleConfigUpdate({ rateLimit: { ...config.rateLimit, maxAttempts: parseInt(e.target.value) || 0 } })}
+                                        className="border-2 border-black p-2 text-lg"
+                                    />
+                                    <span className="text-xs text-zinc-400">Submissions allowed in window</span>
+                                </div>
+
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-bold text-zinc-500 uppercase">Window Duration (Seconds)</label>
+                                    <input
+                                        type="number"
+                                        value={config.rateLimit.windowSeconds}
+                                        onChange={(e) => handleConfigUpdate({ rateLimit: { ...config.rateLimit, windowSeconds: parseInt(e.target.value) || 0 } })}
+                                        className="border-2 border-black p-2 text-lg"
+                                    />
+                                    <span className="text-xs text-zinc-400">Timeframe to check attempts</span>
+                                </div>
+
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-bold text-zinc-500 uppercase">Cooldown Duration (Seconds)</label>
+                                    <input
+                                        type="number"
+                                        value={config.rateLimit.cooldownSeconds}
+                                        onChange={(e) => handleConfigUpdate({ rateLimit: { ...config.rateLimit, cooldownSeconds: parseInt(e.target.value) || 0 } })}
+                                        className="border-2 border-black p-2 text-lg"
+                                    />
+                                    <span className="text-xs text-zinc-400">Penalty wait time if limit exceeded</span>
+                                </div>
+                            </div>
                         </div>
 
                     </div>

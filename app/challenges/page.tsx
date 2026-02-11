@@ -40,6 +40,10 @@ export default function ChallengesPage() {
 
     const [eventState, setEventState] = useState<'START' | 'PAUSE' | 'STOP'>('START');
 
+    // Cooldown State
+    const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
+    const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -78,6 +82,24 @@ export default function ChallengesPage() {
             setLoading(false);
         }
     }, [token, authLoading]);
+
+    useEffect(() => {
+        if (!cooldownUntil) return;
+
+        const interval = setInterval(() => {
+            const now = Date.now();
+            const remaining = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
+            setCooldownRemaining(remaining);
+
+            if (remaining <= 0) {
+                setCooldownUntil(null);
+                setCooldownRemaining(0);
+                clearInterval(interval);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [cooldownUntil]);
 
     // Derived Data
     const categoryStats = useMemo(() => {
@@ -181,7 +203,15 @@ export default function ChallengesPage() {
                 setChallenges(prev => prev.map(c => c.id === selectedChallenge.id ? { ...c, solved: true } : c));
                 setSelectedChallenge(prev => prev ? { ...prev, solved: true } : null);
             } else {
-                setResponse({ type: "error", message: data.error });
+                if (res.status === 429) {
+                    setResponse({ type: "error", message: data.error });
+                    // Set cooldown
+                    const cooldownSeconds = data.cooldownRemaining || 60;
+                    setCooldownUntil(Date.now() + (cooldownSeconds * 1000));
+                    setCooldownRemaining(cooldownSeconds);
+                } else {
+                    setResponse({ type: "error", message: data.error });
+                }
             }
         } catch {
             setResponse({ type: "error", message: "Network error." });
@@ -373,10 +403,20 @@ export default function ChallengesPage() {
                                             />
                                             <button
                                                 onClick={handleSubmit}
-                                                disabled={submitting === selectedChallenge.id || eventState !== 'START'}
-                                                className="bg-black text-white px-8 py-4 font-bold hover:bg-retro-green hover:text-black transition-colors border-2 border-transparent hover:border-black disabled:opacity-50 disabled:hover:bg-black disabled:hover:text-white disabled:cursor-not-allowed"
+                                                disabled={submitting === selectedChallenge.id || eventState !== 'START' || !!cooldownUntil}
+                                                className={`px-8 py-4 font-bold transition-colors border-2 disabled:cursor-not-allowed
+                                            ${submitting === selectedChallenge.id || eventState !== 'START'
+                                                        ? 'bg-zinc-200 text-zinc-500 border-zinc-300'
+                                                        : cooldownUntil
+                                                            ? 'bg-red-200 text-red-800 border-red-800'
+                                                            : 'bg-black text-white hover:bg-retro-green hover:text-black hover:border-black'
+                                                    }`}
                                             >
-                                                {submitting === selectedChallenge.id ? "..." : "SUBMIT"}
+                                                {submitting === selectedChallenge.id
+                                                    ? "..."
+                                                    : cooldownUntil
+                                                        ? `WAIT ${cooldownRemaining}s`
+                                                        : "SUBMIT"}
                                             </button>
                                         </div>
                                         {response && (

@@ -23,6 +23,52 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
 
         const teamId = user?.teamId;
 
+        // --- Rate Limiting Logic ---
+        const config = await getConfig();
+        const { maxAttempts, windowSeconds, cooldownSeconds } = config.rateLimit;
+
+        const rateLimitKey = `rate_limit:attempts:${userId}`;
+        const blockedKey = `rate_limit:blocked:${userId}`;
+
+        // 1. Check if user is currently blocked
+        const isBlocked = await redis.get(blockedKey);
+        if (isBlocked) {
+            const ttl = await redis.ttl(blockedKey);
+            return NextResponse.json({
+                error: `You are cooling down. Please wait ${ttl} seconds.`,
+                cooldownRemaining: ttl
+            }, { status: 429 });
+        }
+
+        // 2. Add current attempt timestamp
+        const now = Date.now();
+        await redis.rpush(rateLimitKey, now);
+
+        // 3. Keep only the last 'maxAttempts' timestamps
+        await redis.ltrim(rateLimitKey, -maxAttempts, -1);
+
+        // 4. Check if rate limit exceeded
+        const attempts = await redis.lrange(rateLimitKey, 0, -1);
+
+        if (attempts.length >= maxAttempts) {
+            const oldestAttempt = parseInt(attempts[0]);
+            const timeDiff = (now - oldestAttempt) / 1000; // seconds
+
+            if (timeDiff < windowSeconds) {
+                // Rate limit triggered! Block user.
+                await redis.set(blockedKey, 'blocked', 'EX', cooldownSeconds);
+                // Optional: Clear attempts so they start fresh after cooldown? 
+                // Alternatively, let them expire naturally. Clearing is often cleaner.
+                await redis.del(rateLimitKey);
+
+                return NextResponse.json({
+                    error: `Rate limit exceeded. Please wait ${cooldownSeconds} seconds.`,
+                    cooldownRemaining: cooldownSeconds
+                }, { status: 429 });
+            }
+        }
+        // ---------------------------
+
         // 1. Check if already solved by User OR Team
         const existingSubmission = await prisma.submission.findFirst({
             where: {
