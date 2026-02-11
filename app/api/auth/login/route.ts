@@ -55,9 +55,9 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: 'User not found. Please Register or Join a Team.', requiresRegistration: true }, { status: 404 });
             }
 
-            // Determine Role (First user is ADMIN)
-            const userCount = await prisma.user.count();
-            const initialRole: Role = userCount === 0 ? Role.ADMIN : Role.USER;
+            // Determine Role (Based on ADMIN_EMAIL env)
+            const adminEmail = process.env.ADMIN_EMAIL;
+            const initialRole: Role = (adminEmail && email === adminEmail) ? Role.ADMIN : Role.USER;
 
             if (mode === 'REGISTER') {
                 if (!teamName || teamName.trim().length < 3) {

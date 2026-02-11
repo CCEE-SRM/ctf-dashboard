@@ -8,6 +8,7 @@ import {
     signOut,
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
     user: User | null;
@@ -34,6 +35,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [dbUser, setDbUser] = useState<any | null>(null);
     const [token, setToken] = useState<string | null>(null);
@@ -82,6 +84,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else {
                 console.error("Login API Error:", data.error);
                 setError(data.error || "Login failed");
+
+                if (data.error === "Server Configuration Error") {
+                    await signOut(auth);
+                    setDbUser(null);
+                    setUser(null);
+                    router.push("/");
+                    return;
+                }
+
                 if (data.requiresRegistration) {
                     // If backend says registration required, we might need to handle it?
                     // Actually, for now, just showing error is enough.
