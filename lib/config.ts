@@ -1,4 +1,6 @@
 // lib/config.ts
+import { redis } from './redis';
+
 export interface AppConfig {
     dynamicScoring: boolean;
     eventState: 'START' | 'PAUSE' | 'STOP';
@@ -19,28 +21,82 @@ const DEFAULT_CONFIG: AppConfig = {
     }
 };
 
+const REDIS_CONFIG_KEY = 'config:app';
+
 export async function getConfig(): Promise<AppConfig> {
+    // 1. Get base config from Environment Variables (Static defaults)
     const dynamicScoring = process.env.DYNAMIC_SCORING === 'true' || DEFAULT_CONFIG.dynamicScoring;
-    const eventState = (process.env.EVENT_STATE as any) || DEFAULT_CONFIG.eventState;
+    const envEventState = (process.env.EVENT_STATE as any) || DEFAULT_CONFIG.eventState;
 
-    // Validate eventState
+    // Validate eventState from environment
     const validStates = ['START', 'PAUSE', 'STOP'];
-    const finalEventState = validStates.includes(eventState) ? eventState : DEFAULT_CONFIG.eventState;
+    const finalEnvEventState = validStates.includes(envEventState) ? envEventState : DEFAULT_CONFIG.eventState;
 
-    return {
+    const baseConfig: AppConfig = {
         dynamicScoring,
-        eventState: finalEventState,
+        eventState: finalEnvEventState,
         rateLimit: {
             maxAttempts: Number(process.env.RATE_LIMIT_MAX_ATTEMPTS) || DEFAULT_CONFIG.rateLimit.maxAttempts,
             windowSeconds: Number(process.env.RATE_LIMIT_WINDOW_SECONDS) || DEFAULT_CONFIG.rateLimit.windowSeconds,
             cooldownSeconds: Number(process.env.RATE_LIMIT_COOLDOWN_SECONDS) || DEFAULT_CONFIG.rateLimit.cooldownSeconds,
         }
     };
+
+    // 2. Try to fetch overrides from Redis
+    try {
+        const cached = await redis.get(REDIS_CONFIG_KEY);
+        if (cached) {
+            const overrides = JSON.parse(cached);
+            // Apply validation for eventState from Redis overrides
+            const overrideEventState = validStates.includes(overrides.eventState) ? overrides.eventState : baseConfig.eventState;
+
+            return {
+                ...baseConfig,
+                ...overrides,
+                eventState: overrideEventState, // Use validated override or base
+                rateLimit: {
+                    ...baseConfig.rateLimit,
+                    ...(overrides.rateLimit || {})
+                }
+            };
+        }
+    } catch (error) {
+        console.error('Failed to fetch config from Redis, using ENV defaults', error);
+    }
+
+    return baseConfig;
 }
 
-// Since we are moving to ENV variables, runtime updates via the API will no longer persist to a file.
-// In a serverless/containerized environment, env variables are typically immutable at runtime for the process.
 export async function updateConfig(newConfig: Partial<AppConfig>): Promise<AppConfig> {
-    console.warn('updateConfig called, but persistent updates are disabled as we migrated to ENV variables. Please update your .env file.');
-    return getConfig();
+    try {
+        const currentConfig = await getConfig();
+
+        // Validate newConfig.eventState if provided
+        let validatedNewConfig = { ...newConfig };
+        if (newConfig.eventState) {
+            const validStates = ['START', 'PAUSE', 'STOP'];
+            if (!validStates.includes(newConfig.eventState)) {
+                console.warn(`Invalid eventState '${newConfig.eventState}' provided. Keeping current state.`);
+                delete validatedNewConfig.eventState; // Remove invalid state to prevent it from being applied
+            }
+        }
+
+        const updatedConfig = {
+            ...currentConfig,
+            ...validatedNewConfig,
+            rateLimit: {
+                ...currentConfig.rateLimit,
+                ...(validatedNewConfig.rateLimit || {})
+            }
+        };
+
+        // Save to Redis
+        await redis.set(REDIS_CONFIG_KEY, JSON.stringify(updatedConfig));
+
+        console.log('[CONFIG] Application configuration updated in Redis');
+        return updatedConfig;
+    } catch (error) {
+        console.error('Failed to update config in Redis', error);
+        throw error;
+    }
 }
