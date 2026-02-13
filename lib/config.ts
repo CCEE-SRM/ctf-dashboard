@@ -1,8 +1,4 @@
-import fs from 'fs/promises';
-import path from 'path';
-
-const CONFIG_PATH = path.join(process.cwd(), 'config.json');
-
+// lib/config.ts
 export interface AppConfig {
     dynamicScoring: boolean;
     eventState: 'START' | 'PAUSE' | 'STOP';
@@ -24,33 +20,27 @@ const DEFAULT_CONFIG: AppConfig = {
 };
 
 export async function getConfig(): Promise<AppConfig> {
-    try {
-        const fileContent = await fs.readFile(CONFIG_PATH, 'utf-8');
-        return JSON.parse(fileContent);
-    } catch (error: any) {
-        if (error.code === 'ENOENT') {
-            // If file doesn't exist, create it with defaults
-            try {
-                await fs.writeFile(CONFIG_PATH, JSON.stringify(DEFAULT_CONFIG, null, 4), 'utf-8');
-                return DEFAULT_CONFIG;
-            } catch (writeError) {
-                console.error('Failed to create default config.json', writeError);
-            }
-        } else {
-            console.warn('Failed to read config.json, using defaults.', error);
+    const dynamicScoring = process.env.DYNAMIC_SCORING === 'true' || DEFAULT_CONFIG.dynamicScoring;
+    const eventState = (process.env.EVENT_STATE as any) || DEFAULT_CONFIG.eventState;
+
+    // Validate eventState
+    const validStates = ['START', 'PAUSE', 'STOP'];
+    const finalEventState = validStates.includes(eventState) ? eventState : DEFAULT_CONFIG.eventState;
+
+    return {
+        dynamicScoring,
+        eventState: finalEventState,
+        rateLimit: {
+            maxAttempts: Number(process.env.RATE_LIMIT_MAX_ATTEMPTS) || DEFAULT_CONFIG.rateLimit.maxAttempts,
+            windowSeconds: Number(process.env.RATE_LIMIT_WINDOW_SECONDS) || DEFAULT_CONFIG.rateLimit.windowSeconds,
+            cooldownSeconds: Number(process.env.RATE_LIMIT_COOLDOWN_SECONDS) || DEFAULT_CONFIG.rateLimit.cooldownSeconds,
         }
-        return DEFAULT_CONFIG;
-    }
+    };
 }
 
+// Since we are moving to ENV variables, runtime updates via the API will no longer persist to a file.
+// In a serverless/containerized environment, env variables are typically immutable at runtime for the process.
 export async function updateConfig(newConfig: Partial<AppConfig>): Promise<AppConfig> {
-    try {
-        const currentConfig = await getConfig();
-        const updatedConfig = { ...currentConfig, ...newConfig };
-        await fs.writeFile(CONFIG_PATH, JSON.stringify(updatedConfig, null, 4), 'utf-8');
-        return updatedConfig;
-    } catch (error) {
-        console.error('Failed to update config.json', error);
-        throw error;
-    }
+    console.warn('updateConfig called, but persistent updates are disabled as we migrated to ENV variables. Please update your .env file.');
+    return getConfig();
 }
