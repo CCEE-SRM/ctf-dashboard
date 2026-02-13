@@ -57,7 +57,8 @@ model Challenge {
   id            String   @id @default(uuid())
   title         String
   description   String
-  theme         String
+  themeId       String?
+  theme         Theme?   @relation(fields: [themeId], references: [id])
   link          String?
   thumbnail     String? // URL to image
   flag          String // Secret flag
@@ -131,4 +132,10 @@ model Announcement {
 
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
+}
+
+model Theme {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  challenges Challenge[]
 }

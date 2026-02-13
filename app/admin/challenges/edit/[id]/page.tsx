@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function EditChallengePage({ params }: { params: Promise<{ id: string }> }) {
     const { token, dbUser, loading } = useAuth();
@@ -12,7 +13,7 @@ export default function EditChallengePage({ params }: { params: Promise<{ id: st
     const [form, setForm] = useState({
         title: "",
         description: "",
-        theme: "Web",
+        themeId: "",
         link: "",
         thumbnail: "",
         points: 100,
@@ -21,6 +22,8 @@ export default function EditChallengePage({ params }: { params: Promise<{ id: st
         hints: [] as { content: string; cost: number }[]
     });
 
+    const [themes, setThemes] = useState<{ id: string; name: string }[]>([]);
+
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [message, setMessage] = useState("");
     const [loadingData, setLoadingData] = useState(true);
@@ -28,8 +31,16 @@ export default function EditChallengePage({ params }: { params: Promise<{ id: st
     useEffect(() => {
         if (!token) return;
 
-        const fetchChallenge = async () => {
+        const fetchData = async () => {
             try {
+                // Fetch Themes first
+                const resThemes = await fetch("/api/admin/themes", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const themesData = await resThemes.json();
+                setThemes(themesData);
+
+                // Then fetch challenge
                 const res = await fetch("/api/admin/challenges", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -41,7 +52,7 @@ export default function EditChallengePage({ params }: { params: Promise<{ id: st
                         setForm({
                             title: challenge.title,
                             description: challenge.description,
-                            theme: challenge.theme,
+                            themeId: challenge.themeId || "",
                             link: challenge.link || "",
                             thumbnail: challenge.thumbnail || "",
                             points: challenge.points,
@@ -55,14 +66,14 @@ export default function EditChallengePage({ params }: { params: Promise<{ id: st
                     }
                 }
             } catch (error) {
-                console.error("Failed to fetch challenge", error);
-                setMessage("Failed to load challenge data.");
+                console.error("Failed to fetch data", error);
+                setMessage("Failed to load data.");
             } finally {
                 setLoadingData(false);
             }
         };
 
-        fetchChallenge();
+        fetchData();
     }, [token, id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -160,18 +171,20 @@ export default function EditChallengePage({ params }: { params: Promise<{ id: st
                         <div>
                             <label className="block text-lg font-bold font-pixel uppercase mb-2">Theme</label>
                             <select
-                                name="theme"
+                                name="themeId"
                                 className="w-full bg-zinc-50 border-2 border-black p-3 font-mono-retro focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-                                value={form.theme}
+                                value={form.themeId}
                                 onChange={handleChange}
+                                required
                             >
-                                <option value="Web">Web Exploitation</option>
-                                <option value="Crypto">Cryptography</option>
-                                <option value="Pwn">Pwn / Binary Exploitation</option>
-                                <option value="Reverse">Reverse Engineering</option>
-                                <option value="Forensics">Forensics</option>
-                                <option value="Misc">Misc</option>
+                                <option value="" disabled>SELECT THEME...</option>
+                                {themes.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
                             </select>
+                            <Link href="/admin/themes" className="text-xs text-blue-600 hover:underline mt-1 block font-pixel uppercase">
+                                + Manage Themes
+                            </Link>
                         </div>
 
                         <div>

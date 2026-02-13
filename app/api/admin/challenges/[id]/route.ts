@@ -13,7 +13,7 @@ export const PUT = adminOnly(async (req: AuthenticatedRequest, { params }: { par
         const body = await req.json();
 
         // Destructure allowed fields to update
-        const { title, description, theme, link, points, flag, visible, thumbnail, initialPoints } = body;
+        const { title, description, themeId, link, points, flag, visible, thumbnail, initialPoints } = body;
 
         // Verify challenge exists
         const existingChallenge = await prisma.challenge.findUnique({
@@ -31,7 +31,7 @@ export const PUT = adminOnly(async (req: AuthenticatedRequest, { params }: { par
                 data: {
                     title,
                     description,
-                    theme,
+                    themeId,
                     link,
                     points: points !== undefined ? Number(points) : undefined,
                     initialPoints: initialPoints !== undefined ? Number(initialPoints) : undefined,

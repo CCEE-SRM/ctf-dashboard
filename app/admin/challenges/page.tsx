@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 interface Challenge {
     id: string;
     title: string;
-    theme: string;
+    theme?: { name: string };
     points: number;
     visible: boolean;
     createdAt: string;
@@ -135,12 +135,21 @@ export default function AdminChallengesPage() {
                             </button>
                         </div>
 
-                        <Link
-                            href="/admin/challenges/create"
-                            className="bg-retro-green text-black font-bold py-3 px-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-2 font-pixel text-lg"
-                        >
-                            <span>+ NEW CHALLENGE</span>
-                        </Link>
+                        <div className="flex gap-4">
+                            <Link
+                                href="/admin/themes"
+                                className="bg-white text-black font-bold py-3 px-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-2 font-pixel text-lg uppercase"
+                            >
+                                <span>Theme Registry</span>
+                            </Link>
+
+                            <Link
+                                href="/admin/challenges/create"
+                                className="bg-retro-green text-black font-bold py-3 px-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-2 font-pixel text-lg"
+                            >
+                                <span>+ NEW CHALLENGE</span>
+                            </Link>
+                        </div>
                     </div>
                 </header>
 
@@ -162,7 +171,7 @@ export default function AdminChallengesPage() {
                                         <td className="p-4 font-bold text-lg">{challenge.title}</td>
                                         <td className="p-4">
                                             <span className="bg-zinc-200 border-2 border-black px-2 py-1 text-sm font-bold uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
-                                                {challenge.theme}
+                                                {challenge.theme?.name || 'N/A'}
                                             </span>
                                         </td>
                                         <td className="p-4 font-mono-retro text-purple-700 font-bold">{challenge.points}pts</td>

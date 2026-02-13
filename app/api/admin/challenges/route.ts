@@ -8,7 +8,10 @@ export const GET = adminOnly(async () => {
     try {
         const challenges = await prisma.challenge.findMany({
             orderBy: { createdAt: 'desc' },
-            include: { hints: true }
+            include: {
+                hints: true,
+                theme: true
+            }
         });
         return NextResponse.json(challenges);
     } catch (error) {
@@ -20,10 +23,10 @@ export const GET = adminOnly(async () => {
 export const POST = adminOnly(async (req: AuthenticatedRequest) => {
     try {
         const body = await req.json();
-        const { title, description, theme, link, points, flag, thumbnail } = body;
+        const { title, description, themeId, link, points, flag, thumbnail } = body;
 
         // Basic Validation
-        if (!title || !description || !theme || !flag || points === undefined) {
+        if (!title || !description || !themeId || !flag || points === undefined) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
@@ -31,7 +34,7 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
             data: {
                 title,
                 description,
-                theme,
+                themeId,
                 link: link || null,
                 thumbnail: thumbnail || null,
                 points: Number(points),

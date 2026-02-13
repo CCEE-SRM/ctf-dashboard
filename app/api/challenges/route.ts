@@ -42,7 +42,9 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                     id: true,
                     title: true,
                     description: true,
-                    theme: true,
+                    theme: {
+                        select: { name: true }
+                    },
                     link: true,
                     thumbnail: true,
                     points: true,
@@ -87,6 +89,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
 
         const challengesWithStatus = problems.map((p: any) => ({
             ...p,
+            theme: p.theme?.name || 'Misc',
             points: dynamicScoring ? p.points : (p.initialPoints || p.points),
             solved: solvedChallengeIds.has(p.id)
         }));

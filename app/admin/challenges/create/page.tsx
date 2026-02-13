@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function CreateChallengePage() {
     const { token, dbUser, loading } = useAuth();
@@ -11,7 +12,7 @@ export default function CreateChallengePage() {
     const [form, setForm] = useState({
         title: "",
         description: "",
-        theme: "Web", // Default theme
+        themeId: "",
         link: "",
         thumbnail: "",
         points: 100,
@@ -19,6 +20,7 @@ export default function CreateChallengePage() {
         hints: [] as { content: string; cost: number }[]
     });
 
+    const [themes, setThemes] = useState<{ id: string; name: string }[]>([]);
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [message, setMessage] = useState("");
 
@@ -26,8 +28,29 @@ export default function CreateChallengePage() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    const [loadingThemes, setLoadingThemes] = useState(true);
+
+    useState(() => {
+        if (!token) return;
+        fetch("/api/admin/themes", {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                setThemes(data);
+                if (data.length > 0) {
+                    setForm(prev => ({ ...prev, themeId: data[0].id }));
+                }
+            })
+            .finally(() => setLoadingThemes(false));
+    });
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!form.themeId) {
+            alert("Please select a theme.");
+            return;
+        }
         setStatus("loading");
         setMessage("");
 
@@ -107,18 +130,20 @@ export default function CreateChallengePage() {
                         <div>
                             <label className="block text-lg font-bold font-pixel uppercase mb-2">Theme</label>
                             <select
-                                name="theme"
+                                name="themeId"
                                 className="w-full bg-zinc-50 border-2 border-black p-3 font-mono-retro focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-                                value={form.theme}
+                                value={form.themeId}
                                 onChange={handleChange}
+                                required
                             >
-                                <option value="Web">Web Exploitation</option>
-                                <option value="Crypto">Cryptography</option>
-                                <option value="Pwn">Pwn / Binary Exploitation</option>
-                                <option value="Reverse">Reverse Engineering</option>
-                                <option value="Forensics">Forensics</option>
-                                <option value="Misc">Misc</option>
+                                <option value="" disabled>SELECT THEME...</option>
+                                {themes.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
                             </select>
+                            <Link href="/admin/themes" className="text-xs text-blue-600 hover:underline mt-1 block font-pixel uppercase">
+                                + Add New Theme
+                            </Link>
                         </div>
 
                         <div>
