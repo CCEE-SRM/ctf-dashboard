@@ -33,6 +33,16 @@ interface AppConfig {
     publicLeaderboard: boolean;
 }
 
+interface AdminStats {
+    totalTeams: number;
+    totalUsers: number;
+    totalCorrectSolves: number;
+    challengesSolved: number;
+    totalChallenges: number;
+    solveRate: number;
+    mostSolvedChallenge: string;
+}
+
 export default function AdminDashboardPage() {
     const { token, dbUser, loading } = useAuth();
     const router = useRouter();
@@ -46,42 +56,52 @@ export default function AdminDashboardPage() {
         publicChallenges: true,
         publicLeaderboard: true
     });
+    const [stats, setStats] = useState<AdminStats | null>(null);
     const [loadingData, setLoadingData] = useState(true);
 
     // Fetch Data
-    useEffect(() => {
+    const fetchData = async () => {
         if (!token) return;
-
-        const fetchData = async () => {
-            try {
-                // Fetch Leaderboard
-                const resLeader = await fetch("/api/leaderboard", {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (resLeader.ok) {
-                    const data = await resLeader.json();
-                    setLeaderboard(data);
-                }
-
-                // Fetch Config
-                const resConfig = await fetch("/api/admin/config", {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (resConfig.ok) {
-                    const data = await resConfig.json();
-                    setConfig(data);
-                }
-
-            } catch (error) {
-                console.error("Failed to fetch admin data", error);
-            } finally {
-                setLoadingData(false);
+        try {
+            // Fetch Leaderboard
+            const resLeader = await fetch("/api/leaderboard", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (resLeader.ok) {
+                const data = await resLeader.json();
+                setLeaderboard(data);
             }
-        };
 
+            // Fetch Config
+            const resConfig = await fetch("/api/admin/config", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (resConfig.ok) {
+                const data = await resConfig.json();
+                setConfig(data);
+            }
+
+            // Fetch Stats
+            const resStats = await fetch("/api/admin/stats", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (resStats.ok) {
+                const data = await resStats.json();
+                setStats(data);
+            }
+
+        } catch (error) {
+            console.error("Failed to fetch admin data", error);
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    useEffect(() => {
         fetchData();
-
-        // Polling for live updates on leaderboard? Maybe just fetch once for now.
+        // Polling for live updates? 
+        const interval = setInterval(fetchData, 30000); // 30s
+        return () => clearInterval(interval);
     }, [token]);
 
     const handleConfigUpdate = async (update: Partial<AppConfig>) => {
@@ -109,229 +129,334 @@ export default function AdminDashboardPage() {
         }
     };
 
-    if (loading || loadingData) return <div className="p-8 font-mono-retro text-black">Loading...</div>;
+    if (loading || (loadingData && !stats)) return (
+        <div className="min-h-screen bg-zinc-100 flex items-center justify-center font-pixel">
+            <div className="text-2xl animate-pulse">INITIATING COMMAND CENTER...</div>
+        </div>
+    );
 
     if (!dbUser || dbUser.role !== 'ADMIN') {
-        return <div className="p-8 text-red-600 font-pixel">Access Denied. Admins only.</div>;
+        return (
+            <div className="min-h-screen bg-zinc-100 flex items-center justify-center p-8">
+                <div className="bg-white border-4 border-red-600 p-8 shadow-[8px_8px_0px_0px_rgba(220,38,38,1)] text-center max-w-md">
+                    <h1 className="text-4xl font-pixel text-red-600 mb-4 uppercase">Access Denied</h1>
+                    <p className="font-mono-retro text-zinc-600 mb-6 uppercase">Administrative Clearance Required. Unauthorized access attempt logged.</p>
+                    <Link href="/" className="bg-black text-white px-6 py-2 font-pixel hover:bg-zinc-800 transition-colors uppercase">Return to Base</Link>
+                </div>
+            </div>
+        );
     }
 
-    const stateColors = {
-        START: 'bg-green-500 text-black border-green-700',
-        PAUSE: 'bg-yellow-400 text-black border-yellow-600',
-        STOP: 'bg-red-500 text-white border-red-700'
-    };
-
     return (
-        <div className="min-h-screen bg-zinc-100 text-black p-8 relative selection:bg-purple-500 selection:text-white font-mono-retro">
-            {/* Background Grid */}
-            <div className="absolute inset-0 bg-[url('/grid.png')] opacity-10 pointer-events-none fixed"></div>
+        <div className="min-h-screen bg-zinc-100 text-black p-4 md:p-8 relative selection:bg-purple-500 selection:text-white font-mono-retro overflow-x-hidden">
+            {/* Background Grid & Scanline */}
+            <div className="fixed inset-0 bg-[url('/grid.png')] opacity-[0.03] pointer-events-none"></div>
+            <div className="fixed inset-0 pointer-events-none bg-gradient-to-b from-transparent via-black/[0.02] to-transparent bg-[length:100%_4px] opacity-10"></div>
 
             <div className="max-w-7xl mx-auto relative z-10">
-                {/* Header */}
-                <header className="mb-12 flex flex-col md:flex-row justify-between items-end border-b-4 border-black pb-6 border-dashed gap-4">
-                    <div>
-                        <h1 className="text-5xl font-pixel mb-2 text-shadow-retro uppercase">Mission Control</h1>
-                        <p className="text-xl font-mono-retro bg-black text-white inline-block px-2">
-                            Global Operations Center
-                        </p>
+                {/* Header Section */}
+                <header className="mb-10 flex flex-col xl:flex-row justify-between items-start xl:items-end border-b-8 border-black pb-8 gap-8">
+                    <div className="relative">
+                        <div className="absolute -top-6 -left-2 bg-black text-white px-2 py-0.5 text-[10px] uppercase font-pixel tracking-tighter z-20">
+                            Secure Network Alpha
+                        </div>
+                        <h1 className="text-6xl md:text-8xl font-pixel text-shadow-retro leading-none uppercase tracking-tighter">
+                            Mission<br /><span className="text-purple-600">Control</span>
+                        </h1>
                     </div>
-                    <div className="flex gap-4">
-                        <Link
-                            href="/admin/challenges"
-                            className="bg-zinc-200 text-black font-bold py-2 px-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all font-pixel uppercase"
-                        >
-                            Manage Challenges
-                        </Link>
-                        <Link
-                            href="/admin/announcements"
-                            className="bg-zinc-200 text-black font-bold py-2 px-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all font-pixel uppercase"
-                        >
-                            Manage Announcements
-                        </Link>
-                        <Link
-                            href="/admin/seed"
-                            className="bg-zinc-200 text-black font-bold py-2 px-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all font-pixel uppercase"
-                        >
-                            Seed Database
-                        </Link>
+
+                    <div className="w-full xl:w-auto">
+                        <nav className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <Link href="/admin/challenges" className="stats-link group">
+                                <span className="stats-link-icon">⚔️</span>
+                                <span className="stats-link-text">Challenges</span>
+                            </Link>
+                            <Link href="/admin/users" className="stats-link group">
+                                <span className="stats-link-icon">👥</span>
+                                <span className="stats-link-text">Personnel</span>
+                            </Link>
+                            <Link href="/admin/announcements" className="stats-link group">
+                                <span className="stats-link-icon">📢</span>
+                                <span className="stats-link-text">Intel</span>
+                            </Link>
+                            <Link href="/admin/seed" className="stats-link group text-zinc-400 opacity-50 hover:opacity-100">
+                                <span className="stats-link-icon">💾</span>
+                                <span className="stats-link-text">System</span>
+                            </Link>
+                        </nav>
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* LEFT: Controls */}
-                    <div className="lg:col-span-1 space-y-8">
+                {/* Top Stats Banner */}
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                    <div className="stats-card border-black">
+                        <div className="stats-card-label">Registered Units</div>
+                        <div className="stats-card-value">{stats?.totalTeams || 0} <span className="text-xl">Teams</span></div>
+                        <div className="stats-card-sub">{stats?.totalUsers || 0} Individual Agents</div>
+                        <div className="stats-card-bar bg-zinc-200"><div className="bg-black h-full" style={{ width: '100%' }}></div></div>
+                    </div>
 
-                        {/* Event State Control */}
-                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                            <h2 className="text-2xl font-pixel mb-6 border-b-2 border-black pb-2">EVENT STATE</h2>
+                    <div className="stats-card border-purple-600">
+                        <div className="stats-card-label text-purple-600">Operations Progress</div>
+                        <div className="stats-card-value text-purple-600">{stats?.solveRate || 0}%</div>
+                        <div className="stats-card-sub">{stats?.challengesSolved || 0} / {stats?.totalChallenges || 0} Challenges Solved</div>
+                        <div className="stats-card-bar bg-purple-100"><div className="bg-purple-600 h-full transition-all duration-1000" style={{ width: `${stats?.solveRate || 0}%` }}></div></div>
+                    </div>
 
-                            <div className="flex flex-col gap-4">
+                    <div className="stats-card border-retro-green">
+                        <div className="stats-card-label text-retro-green">Total Valid Solves</div>
+                        <div className="stats-card-value text-retro-green">{stats?.totalCorrectSolves || 0}</div>
+                        <div className="stats-card-sub">Correct Flag Submissions</div>
+                        <div className="stats-card-bar bg-green-100"><div className="bg-retro-green h-full" style={{ width: '100%' }}></div></div>
+                    </div>
+
+                    <div className="stats-card border-yellow-500">
+                        <div className="stats-card-label text-yellow-600">Hot Target</div>
+                        <div className="stats-card-value text-yellow-600 text-2xl mt-2 line-clamp-1">{stats?.mostSolvedChallenge || "N/A"}</div>
+                        <div className="stats-card-sub">Most Compromised Node</div>
+                        <div className="stats-card-bar bg-yellow-100"><div className="bg-yellow-500 h-full" style={{ width: '100%' }}></div></div>
+                    </div>
+                </section>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* LEFT SIDE: Operations Control (Col 4) */}
+                    <div className="lg:col-span-12 xl:col-span-4 space-y-8">
+
+                        {/* THE RED BUTTON / EVENT STATE */}
+                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
+                            <div className="absolute top-2 right-2 flex gap-1">
+                                {[1, 2, 3].map(i => <div key={i} className={`w-2 h-2 border border-black ${config.eventState === 'START' ? 'animate-pulse bg-green-500' : 'bg-transparent'}`}></div>)}
+                            </div>
+
+                            <h2 className="text-3xl font-pixel mb-8 border-b-2 border-black pb-2 flex items-center gap-3">
+                                <span>EVENT SIGNAL</span>
+                                {config.eventState === 'START' && <div className="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-ping"></div>}
+                            </h2>
+
+                            <div className="grid grid-cols-1 gap-4 font-pixel">
                                 <button
                                     onClick={() => handleConfigUpdate({ eventState: 'START' })}
-                                    className={`p-4 border-4 font-bold text-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between group ${config.eventState === 'START' ? 'bg-green-500 border-black' : 'bg-zinc-100 border-zinc-300 text-zinc-400 hover:border-green-500 hover:text-green-600'}`}
+                                    className={`control-btn ${config.eventState === 'START' ? 'bg-green-500 border-black shadow-[4px_4px_0px_0px_black]' : 'bg-zinc-100 text-zinc-400 border-zinc-300'}`}
                                 >
-                                    <span>START</span>
-                                    <div className={`w-4 h-4 rounded-full border-2 border-black ${config.eventState === 'START' ? 'bg-black' : 'bg-transparent'}`}></div>
+                                    <span className="flex items-center gap-4">
+                                        <div className={`w-6 h-6 border-4 flex items-center justify-center ${config.eventState === 'START' ? 'border-black' : 'border-zinc-300'}`}>
+                                            {config.eventState === 'START' && <div className="w-2 h-2 bg-black"></div>}
+                                        </div>
+                                        GO LIVE (START)
+                                    </span>
                                 </button>
 
                                 <button
                                     onClick={() => handleConfigUpdate({ eventState: 'PAUSE' })}
-                                    className={`p-4 border-4 font-bold text-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between group ${config.eventState === 'PAUSE' ? 'bg-yellow-400 border-black' : 'bg-zinc-100 border-zinc-300 text-zinc-400 hover:border-yellow-400 hover:text-yellow-600'}`}
+                                    className={`control-btn ${config.eventState === 'PAUSE' ? 'bg-yellow-400 border-black shadow-[4px_4px_0px_0px_black]' : 'bg-zinc-100 text-zinc-400 border-zinc-300'}`}
                                 >
-                                    <span>PAUSE</span>
-                                    <div className={`w-4 h-4 rounded-full border-2 border-black ${config.eventState === 'PAUSE' ? 'bg-black' : 'bg-transparent'}`}></div>
+                                    <span className="flex items-center gap-4">
+                                        <div className={`w-6 h-6 border-4 flex items-center justify-center ${config.eventState === 'PAUSE' ? 'border-black' : 'border-zinc-300'}`}>
+                                            {config.eventState === 'PAUSE' && <div className="w-2 h-2 bg-black"></div>}
+                                        </div>
+                                        HOLD FIRE (PAUSE)
+                                    </span>
                                 </button>
 
                                 <button
                                     onClick={() => handleConfigUpdate({ eventState: 'STOP' })}
-                                    className={`p-4 border-4 font-bold text-xl transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between group ${config.eventState === 'STOP' ? 'bg-red-500 text-white border-black' : 'bg-zinc-100 border-zinc-300 text-zinc-400 hover:border-red-500 hover:text-red-600'}`}
+                                    className={`control-btn ${config.eventState === 'STOP' ? 'bg-red-500 text-white border-black shadow-[4px_4px_0px_0px_black]' : 'bg-zinc-100 text-zinc-400 border-zinc-300'}`}
                                 >
-                                    <span>STOP</span>
-                                    <div className={`w-4 h-4 rounded-full border-2 border-black ${config.eventState === 'STOP' ? 'bg-black' : 'bg-transparent'}`}></div>
+                                    <span className="flex items-center gap-4">
+                                        <div className={`w-6 h-6 border-4 flex items-center justify-center ${config.eventState === 'STOP' ? 'border-white' : 'border-zinc-300'}`}>
+                                            {config.eventState === 'STOP' && <div className="w-2 h-2 bg-white"></div>}
+                                        </div>
+                                        ABORT MISSION (STOP)
+                                    </span>
                                 </button>
                             </div>
 
-                            <div className="mt-6 p-4 bg-zinc-100 border-2 border-black text-sm font-mono-retro">
-                                <strong>CURRENT STATUS:</strong><br />
-                                {config.eventState === 'START' && <span className="text-green-600">Event is LIVE. Submissions allowed.</span>}
-                                {config.eventState === 'PAUSE' && <span className="text-yellow-600">Event PAUSED. Submissions blocked. Challenges visible.</span>}
-                                {config.eventState === 'STOP' && <span className="text-red-600">Event STOPPED. Submissions blocked.</span>}
+                            <div className={`mt-8 p-4 border-2 border-black font-mono-retro text-xs uppercase transition-colors ${config.eventState === 'START' ? 'bg-green-50 text-green-700' : config.eventState === 'PAUSE' ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
+                                <div className="font-bold border-b border-black/10 mb-2 pb-1">Operational Protocol:</div>
+                                {config.eventState === 'START' && "Full access enabled. Global submission window open. Monitoring live solves."}
+                                {config.eventState === 'PAUSE' && "Submissions suspended. Database locked for writes. Challenges remain viewable."}
+                                {config.eventState === 'STOP' && "Cease operations. All challenge modules decompiled. Finalizing leaderboard."}
                             </div>
                         </div>
 
-                        {/* Scoring Config */}
-                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                            <h2 className="text-2xl font-pixel mb-6 border-b-2 border-black pb-2">SCORING LOGIC</h2>
-                            <div className="flex items-center justify-between p-4 border-2 border-black bg-zinc-50">
-                                <span className="font-bold text-lg">DYNAMIC SCORING</span>
-                                <button
-                                    onClick={() => handleConfigUpdate({ dynamicScoring: !config.dynamicScoring })}
-                                    className={`w-16 h-8 border-2 border-black relative transition-colors ${config.dynamicScoring ? 'bg-purple-600' : 'bg-zinc-300'}`}
-                                >
-                                    <div className={`absolute top-0 bottom-0 w-8 bg-white border-r-2 border-black transition-transform ${config.dynamicScoring ? 'translate-x-8 border-l-2 border-r-0' : 'translate-x-0'}`}></div>
-                                </button>
-                            </div>
-                            <p className="mt-4 text-sm text-zinc-600">
-                                {config.dynamicScoring
-                                    ? "Start High, Decay Low. Points decrease as more teams solve."
-                                    : "Fixed Points. Challenges award static points regardless of solve count."}
-                            </p>
-                        </div>
+                        {/* CONFIG GROUP: SCORING & VISIBILITY */}
+                        <div className="bg-zinc-900 text-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                            <h2 className="text-2xl font-pixel mb-6 border-b border-white/20 pb-2 text-purple-400 uppercase">Core Logic</h2>
 
-                        {/* Public Visibility Config */}
-                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                            <h2 className="text-2xl font-pixel mb-6 border-b-2 border-black pb-2">PUBLIC VISIBILITY</h2>
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-lg uppercase tracking-tight">Dynamic Scoring</span>
+                                        <span className="text-[10px] text-zinc-500 font-mono italic max-w-[200px]">Challenges lose value as solve count rises.</span>
+                                    </div>
+                                    <Toggle
+                                        enabled={config.dynamicScoring}
+                                        onClick={() => handleConfigUpdate({ dynamicScoring: !config.dynamicScoring })}
+                                        activeColor="bg-purple-600"
+                                    />
+                                </div>
 
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between p-4 border-2 border-black bg-zinc-50">
-                                    <span className="font-bold text-lg">CHALLENGES</span>
-                                    <button
+                                <div className="h-px bg-white/10 w-full"></div>
+
+                                <div className="flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-lg uppercase tracking-tight">Public Challenges</span>
+                                        <span className="text-[10px] text-zinc-500 font-mono italic">Allow guests to view the challenge list.</span>
+                                    </div>
+                                    <Toggle
+                                        enabled={config.publicChallenges}
                                         onClick={() => handleConfigUpdate({ publicChallenges: !config.publicChallenges })}
-                                        className={`w-16 h-8 border-2 border-black relative transition-colors ${config.publicChallenges ? 'bg-retro-green' : 'bg-zinc-300'}`}
-                                    >
-                                        <div className={`absolute top-0 bottom-0 w-8 bg-white border-r-2 border-black transition-transform ${config.publicChallenges ? 'translate-x-8 border-l-2 border-r-0' : 'translate-x-0'}`}></div>
-                                    </button>
+                                    />
                                 </div>
-                                <div className="flex items-center justify-between p-4 border-2 border-black bg-zinc-50">
-                                    <span className="font-bold text-lg">LEADERBOARD</span>
-                                    <button
+
+                                <div className="flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-lg uppercase tracking-tight">Public Scoreboard</span>
+                                        <span className="text-[10px] text-zinc-500 font-mono italic">Allow anyone to view team rankings.</span>
+                                    </div>
+                                    <Toggle
+                                        enabled={config.publicLeaderboard}
                                         onClick={() => handleConfigUpdate({ publicLeaderboard: !config.publicLeaderboard })}
-                                        className={`w-16 h-8 border-2 border-black relative transition-colors ${config.publicLeaderboard ? 'bg-retro-green' : 'bg-zinc-300'}`}
-                                    >
-                                        <div className={`absolute top-0 bottom-0 w-8 bg-white border-r-2 border-black transition-transform ${config.publicLeaderboard ? 'translate-x-8 border-l-2 border-r-0' : 'translate-x-0'}`}></div>
-                                    </button>
-                                </div>
-                            </div>
-                            <p className="mt-4 text-sm text-zinc-600 font-mono-retro uppercase">
-                                ALLOW UNAUTHENTICATED USERS TO VIEW CONTENT
-                            </p>
-                        </div>
-
-                        {/* Rate Limit Config */}
-                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                            <h2 className="text-2xl font-pixel mb-6 border-b-2 border-black pb-2">RATE LIMITING</h2>
-                            <div className="space-y-4 font-mono-retro">
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-bold text-zinc-500 uppercase">Max Attempts (X)</label>
-                                    <input
-                                        type="number"
-                                        value={config.rateLimit.maxAttempts}
-                                        onChange={(e) => handleConfigUpdate({ rateLimit: { ...config.rateLimit, maxAttempts: parseInt(e.target.value) || 0 } })}
-                                        className="border-2 border-black p-2 text-lg"
                                     />
-                                    <span className="text-xs text-zinc-400">Submissions allowed in window</span>
-                                </div>
-
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-bold text-zinc-500 uppercase">Window Duration (Seconds)</label>
-                                    <input
-                                        type="number"
-                                        value={config.rateLimit.windowSeconds}
-                                        onChange={(e) => handleConfigUpdate({ rateLimit: { ...config.rateLimit, windowSeconds: parseInt(e.target.value) || 0 } })}
-                                        className="border-2 border-black p-2 text-lg"
-                                    />
-                                    <span className="text-xs text-zinc-400">Timeframe to check attempts</span>
-                                </div>
-
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-bold text-zinc-500 uppercase">Cooldown Duration (Seconds)</label>
-                                    <input
-                                        type="number"
-                                        value={config.rateLimit.cooldownSeconds}
-                                        onChange={(e) => handleConfigUpdate({ rateLimit: { ...config.rateLimit, cooldownSeconds: parseInt(e.target.value) || 0 } })}
-                                        className="border-2 border-black p-2 text-lg"
-                                    />
-                                    <span className="text-xs text-zinc-400">Penalty wait time if limit exceeded</span>
                                 </div>
                             </div>
                         </div>
-
                     </div>
 
-                    {/* RIGHT: Leaderboard Widget */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] min-h-[500px]">
-                            <div className="flex justify-between items-center mb-6 border-b-2 border-black pb-2">
-                                <h2 className="text-2xl font-pixel">LIVE LEADERBOARD</h2>
-                                <Link href="/leaderboard" className="text-blue-600 font-bold hover:underline uppercase tracking-wide text-sm font-pixel">[ View Public ]</Link>
+                    {/* RIGHT SIDE: Intelligence Hub (Col 8) */}
+                    <div className="lg:col-span-12 xl:col-span-8 flex flex-col gap-8">
+
+                        {/* LEADERBOARD DATA */}
+                        <div className="bg-white border-4 border-black p-6 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex-grow">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b-4 border-black pb-4 gap-4">
+                                <div>
+                                    <h2 className="text-4xl font-pixel uppercase tracking-tighter">Live Intelligence</h2>
+                                    <div className="text-[10px] bg-black text-white px-2 py-0.5 inline-block uppercase mt-1">Real-time Ranking Engine</div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <Link href="/leaderboard" className="bg-zinc-100 border-2 border-black p-2 hover:bg-zinc-200 transition-all font-pixel text-[10px] uppercase">
+                                        Monitor Public
+                                    </Link>
+                                    <button onClick={fetchData} className="bg-black text-white p-2 hover:bg-zinc-800 transition-all font-pixel text-[10px] uppercase">
+                                        Refresh Data
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-black text-white">
+                                <table className="w-full text-left border-collapse font-mono-retro">
+                                    <thead className="border-b-4 border-black">
                                         <tr>
-                                            <th className="p-3 font-pixel text-lg border-b-2 border-black w-16">#</th>
-                                            <th className="p-3 font-pixel text-lg border-b-2 border-black">Team</th>
-                                            <th className="p-3 font-pixel text-lg border-b-2 border-black text-right">Points</th>
+                                            <th className="p-4 font-pixel text-xs uppercase text-zinc-400">Pos</th>
+                                            <th className="p-4 font-pixel text-xs uppercase text-black">Unit Identity</th>
+                                            <th className="p-4 font-pixel text-xs uppercase text-black text-right">Value (PTS)</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="divide-y-2 divide-zinc-100">
                                         {leaderboard.map((team, index) => (
-                                            <tr key={team.id} className="border-b-2 border-black hover:bg-yellow-50 transition-colors">
-                                                <td className="p-3 font-bold text-xl font-pixel">{index + 1}</td>
-                                                <td className="p-3">
-                                                    <div className="font-bold text-lg">{team.name}</div>
-                                                    <div className="text-xs text-zinc-500 font-mono-retro">Leader: {team.leader?.name || 'Unknown'}</div>
+                                            <tr key={team.id} className="group hover:bg-purple-50 transition-colors">
+                                                <td className="p-4">
+                                                    <div className={`w-8 h-8 flex items-center justify-center font-pixel text-lg ${index === 0 ? 'bg-yellow-400 text-black shadow-[2px_2px_0px_0px_black]' : 'text-zinc-400'}`}>
+                                                        {index + 1}
+                                                    </div>
                                                 </td>
-                                                <td className="p-3 text-right font-mono-retro font-bold text-purple-700 text-xl">
-                                                    {team.points}
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="relative">
+                                                            {team.leader?.profileUrl ? (
+                                                                <img src={team.leader.profileUrl} className="w-10 h-10 border-2 border-black" alt="" />
+                                                            ) : (
+                                                                <div className="w-10 h-10 border-2 border-black bg-zinc-200 flex items-center justify-center text-[10px] uppercase">?</div>
+                                                            )}
+                                                            {index === 0 && <span className="absolute -top-2 -left-2 text-xl">👑</span>}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-xl uppercase tracking-tighter group-hover:text-purple-600 transition-colors leading-tight">
+                                                                {team.name}
+                                                            </div>
+                                                            <div className="text-[10px] text-zinc-500 uppercase">
+                                                                Lead: {team.leader?.name || 'Unknown'} • {team.members?.length || 0} Units
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <div className="text-3xl font-pixel text-purple-700 tracking-tighter tabular-nums drop-shadow-sm">
+                                                        {team.points.toLocaleString()}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
                                         {leaderboard.length === 0 && (
                                             <tr>
-                                                <td colSpan={3} className="p-12 text-center text-zinc-500 font-pixel text-xl">
-                                                    NO TEAMS RANKED
-                                                </td>
+                                                <td colSpan={3} className="p-20 text-center text-zinc-400 font-pixel text-3xl opacity-20 uppercase">No Data Transmission</td>
                                             </tr>
                                         )}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
+
+                        {/* RATE LIMIT SETTINGS */}
+                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="md:col-span-3 border-b-2 border-black pb-2 mb-2 flex justify-between items-center">
+                                <h2 className="text-xl font-pixel uppercase tracking-tight">Security Protocols (Rate Limits)</h2>
+                                <span className="text-[10px] font-mono italic text-zinc-500">Global Anti-Brute Mitigation</span>
+                            </div>
+
+                            {[
+                                { label: 'Max Attempts', key: 'maxAttempts', helper: 'X Allowed Submissions' },
+                                { label: 'Window Window', key: 'windowSeconds', helper: 'Time in Seconds' },
+                                { label: 'Cooldown', key: 'cooldownSeconds', helper: 'Wait Penalty' }
+                            ].map(field => (
+                                <div key={field.key} className="flex flex-col gap-1">
+                                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{field.label}</label>
+                                    <input
+                                        type="number"
+                                        value={config.rateLimit[field.key as keyof typeof config.rateLimit]}
+                                        onChange={(e) => handleConfigUpdate({ rateLimit: { ...config.rateLimit, [field.key]: parseInt(e.target.value) || 0 } })}
+                                        className="border-2 border-black p-2 font-pixel text-lg focus:bg-yellow-50 outline-none transition-colors"
+                                    />
+                                    <span className="text-[10px] font-mono text-zinc-400 italic">{field.helper}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Global Styles */}
+            <style jsx>{`
+                .stats-link {
+                    @apply bg-white border-4 border-black p-3 flex items-center gap-3 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
+                           hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-zinc-50;
+                }
+                .stats-link-icon { @apply text-2xl; }
+                .stats-link-text { @apply font-pixel text-[10px] uppercase tracking-tighter leading-none; }
+
+                .stats-card {
+                    @apply bg-white border-t-8 p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col;
+                }
+                .stats-card-label { @apply text-[10px] font-pixel uppercase tracking-tighter mb-1; }
+                .stats-card-value { @apply text-4xl font-pixel tracking-tighter; }
+                .stats-card-sub { @apply text-[10px] font-mono uppercase text-zinc-400 mt-1; }
+                .stats-card-bar { @apply h-1 w-full mt-4 overflow-hidden; }
+
+                .control-btn {
+                    @apply p-6 border-4 font-bold text-2xl transition-all flex items-center justify-between text-left;
+                }
+            `}</style>
         </div>
+    );
+}
+
+function Toggle({ enabled, onClick, activeColor = "bg-retro-green" }: { enabled: boolean, onClick: () => void, activeColor?: string }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`w-14 h-7 border-4 border-black relative transition-colors ${enabled ? activeColor : 'bg-zinc-700'}`}
+        >
+            <div className={`absolute top-0 bottom-0 w-5 bg-white border-black transition-transform ${enabled ? 'translate-x-full border-l-4' : 'translate-x-0 border-r-4'}`}></div>
+        </button>
     );
 }
