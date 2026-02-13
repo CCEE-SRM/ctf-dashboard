@@ -95,6 +95,23 @@ export async function POST(request: Request) {
                             }
                         });
 
+                        // 3. Initialize Leaderboard entry for 0 points
+                        await tx.leaderboard.create({
+                            data: {
+                                teamId: newTeam.id,
+                                points: 0,
+                                lastSolveAt: new Date(0), // Epoch
+                                memberDetails: [
+                                    {
+                                        name: newUser.name,
+                                        email: newUser.email,
+                                        profileUrl: newUser.profileUrl,
+                                        points: 0
+                                    }
+                                ]
+                            }
+                        });
+
                         // Refetch user with team
                         user = await tx.user.findUnique({
                             where: { id: newUser.id },
