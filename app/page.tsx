@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -11,6 +12,11 @@ export default function Home() {
   const [mode, setMode] = useState<"HOME" | "REGISTER" | "JOIN">("HOME");
   const [teamName, setTeamName] = useState("");
   const [teamCode, setTeamCode] = useState("");
+  const [status, setStatus] = useState({
+    eventState: 'START',
+    publicChallenges: true,
+    publicLeaderboard: true
+  });
 
   // Current Date/Time for HUD
   const [dateTime, setDateTime] = useState("");
@@ -20,6 +26,13 @@ export default function Home() {
     const interval = setInterval(() => {
       setDateTime(new Date().toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: '2-digit' }).replace(',', ''));
     }, 1000);
+
+    // Fetch Status for Visibility
+    fetch("/api/status")
+      .then(res => res.json())
+      .then(data => setStatus(data))
+      .catch(err => console.error("Failed to fetch status", err));
+
     return () => clearInterval(interval);
   }, []);
 
@@ -139,10 +152,28 @@ export default function Home() {
               </button>
               <button
                 onClick={() => signInWithGoogle()} // Regular login if already registered
-                className="px-8 py-4 font-mono font-bold hover:bg-zinc-100 hover:text-retro-green transition-colors flex items-center gap-2 text-lg"
+                className="px-8 py-4 border-r-2 border-black font-mono font-bold hover:bg-zinc-100 hover:text-retro-green transition-colors flex items-center gap-2 text-lg"
               >
                 Login
               </button>
+              <div className="flex flex-col">
+                {status.publicChallenges && (
+                  <Link
+                    href="/challenges"
+                    className="px-6 py-2 border-b border-black font-mono font-bold hover:bg-zinc-100 hover:text-purple-600 transition-colors text-sm text-center"
+                  >
+                    View Challenges
+                  </Link>
+                )}
+                {status.publicLeaderboard && (
+                  <Link
+                    href="/leaderboard"
+                    className="px-6 py-2 font-mono font-bold hover:bg-zinc-100 hover:text-purple-600 transition-colors text-sm text-center"
+                  >
+                    Scoreboard
+                  </Link>
+                )}
+              </div>
             </div>
             {error && (
               <div className="mt-8 p-4 bg-red-100 border-2 border-red-500 text-red-800 font-bold max-w-md mx-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import RetroLayout from "@/components/RetroLayout";
 
@@ -28,6 +29,7 @@ interface Challenge {
 
 export default function ChallengesPage() {
     const { token, loading: authLoading } = useAuth();
+    const router = useRouter();
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState<string | null>(null);
@@ -44,6 +46,8 @@ export default function ChallengesPage() {
     const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
     const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
 
+    const [accessDenied, setAccessDenied] = useState(false);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -55,12 +59,17 @@ export default function ChallengesPage() {
                 }
 
                 // Fetch Challenges
-                const res = await fetch("/api/challenges", {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                // Determine API endpoint based on authentication
+                const endpoint = token ? "/api/challenges" : "/api/challenges/public";
+                const headers: Record<string, string> = {};
+                if (token) headers["Authorization"] = `Bearer ${token}`;
+
+                const res = await fetch(endpoint, { headers });
+
                 if (res.ok) {
                     const data = await res.json();
                     setChallenges(data);
+                    setAccessDenied(false);
                     // Select first category and challenge by default if available
                     if (data.length > 0) {
                         const firstTheme = data[0].theme;
@@ -68,6 +77,8 @@ export default function ChallengesPage() {
                         const firstChall = data.find((c: Challenge) => c.theme === firstTheme);
                         if (firstChall) setSelectedChallenge(firstChall);
                     }
+                } else if (res.status === 403) {
+                    setAccessDenied(true);
                 }
             } catch (error) {
                 console.error("Failed to fetch data", error);
@@ -76,10 +87,8 @@ export default function ChallengesPage() {
             }
         };
 
-        if (token && !authLoading) {
+        if (!authLoading) {
             fetchData();
-        } else if (!authLoading && !token) {
-            setLoading(false);
         }
     }, [token, authLoading]);
 
@@ -220,20 +229,22 @@ export default function ChallengesPage() {
         }
     };
 
-    if (authLoading || loading) {
+    if (loading || authLoading) {
         return <div className="min-h-screen bg-retro-bg flex items-center justify-center font-pixel text-xl">LOADING...</div>;
     }
 
-    if (!token) {
+    if (accessDenied && !token) {
         return (
             <div className="flex min-h-screen flex-col bg-retro-bg text-black font-mono-retro">
                 <div className="flex-1 flex items-center justify-center flex-col gap-4">
-                    <h1 className="text-4xl font-pixel">ACCESS DENIED</h1>
-                    <p className="text-xl">Please log in to access the mainframe.</p>
+                    <h1 className="text-4xl font-pixel text-red-600">ACCESS DENIED</h1>
+                    <p className="text-xl">Public visibility is currently disabled for this sector.</p>
+                    <button onClick={() => router.push('/')} className="mt-4 px-6 py-2 border-2 border-black bg-white hover:bg-zinc-100 font-pixel">BACK TO BASE</button>
                 </div>
             </div>
         );
     }
+
 
     return (
         <RetroLayout title="Challenges" activePage="challenges">
@@ -363,10 +374,10 @@ export default function ChallengesPage() {
                                                     </div>
                                                 ) : (
                                                     <button
-                                                        onClick={() => handleBuyHint(hint.id, hint.cost)}
-                                                        className="w-full py-3 bg-zinc-200 border-2 border-dashed border-zinc-400 text-zinc-500 font-pixel hover:bg-retro-green hover:text-black hover:border-black transition-colors"
+                                                        onClick={() => token ? handleBuyHint(hint.id, hint.cost) : alert("Please login to purchase hints")}
+                                                        className={`w-full py-3 border-2 border-dashed font-pixel transition-colors ${!token ? 'bg-zinc-100 border-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-200 border-zinc-400 text-zinc-500 hover:bg-retro-green hover:text-black hover:border-black'}`}
                                                     >
-                                                        UNLOCK HINT
+                                                        {token ? 'UNLOCK HINT' : 'LOGIN TO UNLOCK'}
                                                     </button>
                                                 )}
                                             </div>
@@ -394,29 +405,33 @@ export default function ChallengesPage() {
                                         <div className="flex gap-4">
                                             <input
                                                 type="text"
-                                                disabled={eventState !== 'START'}
-                                                placeholder={eventState === 'START' ? "Flag{...}" : "LOCKED"}
+                                                disabled={eventState !== 'START' || !token}
+                                                placeholder={!token ? "LOGIN TO SUBMIT" : eventState === 'START' ? "Flag{...}" : "LOCKED"}
                                                 className="flex-1 bg-white border-2 border-black p-4 font-mono text-lg outline-none focus:shadow-[4px_4px_0px_0px_#ccff00] disabled:bg-zinc-200 disabled:text-zinc-500 disabled:cursor-not-allowed"
                                                 value={flagInput}
                                                 onChange={(e) => setFlagInput(e.target.value)}
                                                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                                             />
                                             <button
-                                                onClick={handleSubmit}
-                                                disabled={submitting === selectedChallenge.id || eventState !== 'START' || !!cooldownUntil}
+                                                onClick={() => token ? handleSubmit() : router.push('/')}
+                                                disabled={!!(token && (submitting === selectedChallenge.id || eventState !== 'START' || !!cooldownUntil))}
                                                 className={`px-8 py-4 font-bold transition-colors border-2 disabled:cursor-not-allowed
-                                            ${submitting === selectedChallenge.id || eventState !== 'START'
-                                                        ? 'bg-zinc-200 text-zinc-500 border-zinc-300'
-                                                        : cooldownUntil
-                                                            ? 'bg-red-200 text-red-800 border-red-800'
-                                                            : 'bg-black text-white hover:bg-retro-green hover:text-black hover:border-black'
+                                            ${!token
+                                                        ? 'bg-purple-600 text-white border-black hover:bg-purple-700'
+                                                        : submitting === selectedChallenge.id || eventState !== 'START'
+                                                            ? 'bg-zinc-200 text-zinc-500 border-zinc-300'
+                                                            : cooldownUntil
+                                                                ? 'bg-red-200 text-red-800 border-red-800'
+                                                                : 'bg-black text-white hover:bg-retro-green hover:text-black hover:border-black'
                                                     }`}
                                             >
-                                                {submitting === selectedChallenge.id
-                                                    ? "..."
-                                                    : cooldownUntil
-                                                        ? `WAIT ${cooldownRemaining}s`
-                                                        : "SUBMIT"}
+                                                {!token
+                                                    ? 'LOGIN'
+                                                    : submitting === selectedChallenge.id
+                                                        ? "..."
+                                                        : cooldownUntil
+                                                            ? `WAIT ${cooldownRemaining}s`
+                                                            : "SUBMIT"}
                                             </button>
                                         </div>
                                         {response && (

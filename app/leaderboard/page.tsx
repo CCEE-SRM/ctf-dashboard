@@ -52,14 +52,23 @@ export default function LeaderboardPage() {
     const [visibleTeamIds, setVisibleTeamIds] = useState<string[]>([]);
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
+    const [accessDenied, setAccessDenied] = useState(false);
+
     // Initial fetch
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
-                const res = await fetch("/api/leaderboard");
+                const { token } = JSON.parse(localStorage.getItem('auth_user') || '{}'); // Fallback if AuthContext not ready or no token
+                // Note: AuthContext might be better if we handle loading, but for simplicity:
+                const endpoint = token ? "/api/leaderboard" : "/api/leaderboard/public";
+                const headers: Record<string, string> = {};
+                if (token) headers["Authorization"] = `Bearer ${token}`;
+
+                const res = await fetch(endpoint, { headers });
                 if (res.ok) {
                     const data = await res.json();
                     setTeams(data);
+                    setAccessDenied(false);
                     // Initialize visible teams with Top 5 if not already set or empty
                     if (visibleTeamIds.length === 0 && data.length > 0) {
                         setVisibleTeamIds(data.slice(0, 5).map((t: Team) => t.id));
@@ -68,6 +77,8 @@ export default function LeaderboardPage() {
                     if (!selectedTeamId && data.length > 0) {
                         setSelectedTeamId(data[0].id);
                     }
+                } else if (res.status === 403) {
+                    setAccessDenied(true);
                 }
             } catch (error) {
                 console.error("Failed to fetch leaderboard", error);
@@ -80,7 +91,23 @@ export default function LeaderboardPage() {
         // Poll every 30 seconds for live updates
         const interval = setInterval(fetchLeaderboard, 30000);
         return () => clearInterval(interval);
-    }, []); // Removed deps to avoid reset
+    }, []);
+
+    if (loading) {
+        return <div className="min-h-screen bg-retro-bg flex items-center justify-center font-pixel text-xl">LOADING...</div>;
+    }
+
+    if (accessDenied) {
+        return (
+            <div className="flex min-h-screen flex-col bg-retro-bg text-black font-mono-retro">
+                <div className="flex-1 flex items-center justify-center flex-col gap-4">
+                    <h1 className="text-4xl font-pixel text-red-600">ACCESS DENIED</h1>
+                    <p className="text-xl">Public visibility is currently disabled for this sector.</p>
+                    <button onClick={() => window.location.href = '/'} className="mt-4 px-6 py-2 border-2 border-black bg-white hover:bg-zinc-100 font-pixel">BACK TO BASE</button>
+                </div>
+            </div>
+        );
+    }
 
     const handleTeamClick = (teamId: string) => {
         setSelectedTeamId(teamId);

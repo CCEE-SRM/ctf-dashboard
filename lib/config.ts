@@ -9,6 +9,8 @@ export interface AppConfig {
         windowSeconds: number;
         cooldownSeconds: number;
     };
+    publicChallenges: boolean;
+    publicLeaderboard: boolean;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -18,7 +20,9 @@ const DEFAULT_CONFIG: AppConfig = {
         maxAttempts: 3,
         windowSeconds: 30,
         cooldownSeconds: 60
-    }
+    },
+    publicChallenges: true,
+    publicLeaderboard: true
 };
 
 const REDIS_CONFIG_KEY = 'config:app';
@@ -39,7 +43,9 @@ export async function getConfig(): Promise<AppConfig> {
             maxAttempts: Number(process.env.RATE_LIMIT_MAX_ATTEMPTS) || DEFAULT_CONFIG.rateLimit.maxAttempts,
             windowSeconds: Number(process.env.RATE_LIMIT_WINDOW_SECONDS) || DEFAULT_CONFIG.rateLimit.windowSeconds,
             cooldownSeconds: Number(process.env.RATE_LIMIT_COOLDOWN_SECONDS) || DEFAULT_CONFIG.rateLimit.cooldownSeconds,
-        }
+        },
+        publicChallenges: process.env.PUBLIC_CHALLENGES === 'false' ? false : (process.env.PUBLIC_CHALLENGES === 'true' ? true : DEFAULT_CONFIG.publicChallenges),
+        publicLeaderboard: process.env.PUBLIC_LEADERBOARD === 'false' ? false : (process.env.PUBLIC_LEADERBOARD === 'true' ? true : DEFAULT_CONFIG.publicLeaderboard),
     };
 
     // 2. Try to fetch overrides from Redis

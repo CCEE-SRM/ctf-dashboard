@@ -29,6 +29,8 @@ interface AppConfig {
         windowSeconds: number;
         cooldownSeconds: number;
     };
+    publicChallenges: boolean;
+    publicLeaderboard: boolean;
 }
 
 export default function AdminDashboardPage() {
@@ -40,7 +42,9 @@ export default function AdminDashboardPage() {
     const [config, setConfig] = useState<AppConfig>({
         dynamicScoring: true,
         eventState: 'START',
-        rateLimit: { maxAttempts: 3, windowSeconds: 30, cooldownSeconds: 60 }
+        rateLimit: { maxAttempts: 3, windowSeconds: 30, cooldownSeconds: 60 },
+        publicChallenges: true,
+        publicLeaderboard: true
     });
     const [loadingData, setLoadingData] = useState(true);
 
@@ -211,6 +215,35 @@ export default function AdminDashboardPage() {
                                 {config.dynamicScoring
                                     ? "Start High, Decay Low. Points decrease as more teams solve."
                                     : "Fixed Points. Challenges award static points regardless of solve count."}
+                            </p>
+                        </div>
+
+                        {/* Public Visibility Config */}
+                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                            <h2 className="text-2xl font-pixel mb-6 border-b-2 border-black pb-2">PUBLIC VISIBILITY</h2>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-4 border-2 border-black bg-zinc-50">
+                                    <span className="font-bold text-lg">CHALLENGES</span>
+                                    <button
+                                        onClick={() => handleConfigUpdate({ publicChallenges: !config.publicChallenges })}
+                                        className={`w-16 h-8 border-2 border-black relative transition-colors ${config.publicChallenges ? 'bg-retro-green' : 'bg-zinc-300'}`}
+                                    >
+                                        <div className={`absolute top-0 bottom-0 w-8 bg-white border-r-2 border-black transition-transform ${config.publicChallenges ? 'translate-x-8 border-l-2 border-r-0' : 'translate-x-0'}`}></div>
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between p-4 border-2 border-black bg-zinc-50">
+                                    <span className="font-bold text-lg">LEADERBOARD</span>
+                                    <button
+                                        onClick={() => handleConfigUpdate({ publicLeaderboard: !config.publicLeaderboard })}
+                                        className={`w-16 h-8 border-2 border-black relative transition-colors ${config.publicLeaderboard ? 'bg-retro-green' : 'bg-zinc-300'}`}
+                                    >
+                                        <div className={`absolute top-0 bottom-0 w-8 bg-white border-r-2 border-black transition-transform ${config.publicLeaderboard ? 'translate-x-8 border-l-2 border-r-0' : 'translate-x-0'}`}></div>
+                                    </button>
+                                </div>
+                            </div>
+                            <p className="mt-4 text-sm text-zinc-600 font-mono-retro uppercase">
+                                ALLOW UNAUTHENTICATED USERS TO VIEW CONTENT
                             </p>
                         </div>
 

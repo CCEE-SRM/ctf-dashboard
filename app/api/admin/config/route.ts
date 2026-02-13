@@ -24,7 +24,7 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
         }
 
         const body = await req.json();
-        const { dynamicScoring, eventState } = body;
+        const { dynamicScoring, eventState, publicChallenges, publicLeaderboard } = body;
 
         const filteredUpdate: any = {};
 
@@ -40,6 +40,14 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
                 return NextResponse.json({ error: 'Invalid config: eventState must be START, PAUSE, or STOP' }, { status: 400 });
             }
             filteredUpdate.eventState = eventState;
+        }
+
+        if (publicChallenges !== undefined) {
+            filteredUpdate.publicChallenges = !!publicChallenges;
+        }
+
+        if (publicLeaderboard !== undefined) {
+            filteredUpdate.publicLeaderboard = !!publicLeaderboard;
         }
 
         const { rateLimit } = body;

@@ -53,6 +53,8 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({
             eventState: config.eventState,
+            publicChallenges: config.publicChallenges,
+            publicLeaderboard: config.publicLeaderboard,
             topTeam,
             myTeam: myTeamStats,
             announcementCount
