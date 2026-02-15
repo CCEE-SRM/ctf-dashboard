@@ -85,26 +85,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.error("Login API Error:", data.error);
                 setError(data.error || "Login failed");
 
-                if (data.error === "Server Configuration Error") {
+                // If any of these terminal errors occur, we MUST sign out of Firebase
+                // to prevent being "Auth Logged In" but "App Logged Out"
+                const terminalErrors = ["Server Configuration Error", "Invalid mode", "User not found. Please Register or Join a Team."];
+
+                if (terminalErrors.includes(data.error) || data.requiresRegistration) {
                     await signOut(auth);
                     setDbUser(null);
                     setUser(null);
-                    router.push("/");
-                    return;
-                }
+                    setToken(null);
+                    setSyncedUid(null);
 
-                if (data.requiresRegistration) {
-                    // If backend says registration required, we might need to handle it?
-                    // Actually, for now, just showing error is enough.
-                    // The user is authenticated in Firebase but not in DB.
-                    // We might want to signOut() here to force them to try again with registration?
-                    // Let's decide: Yes, if DB login fails (e.g. requires registration but no mode provided), 
-                    // we should sign out so they aren't stuck in "Firebase logged in but not App logged in" state.
-                    if (data.requiresRegistration) {
-                        await signOut(auth);
-                        setDbUser(null);
-                        setUser(null);
+                    if (data.error === "Server Configuration Error") {
+                        router.push("/");
                     }
+                    return;
                 }
             }
         } catch (error) {
