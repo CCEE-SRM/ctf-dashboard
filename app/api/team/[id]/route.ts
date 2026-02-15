@@ -68,8 +68,8 @@ export async function GET(
         // Calculate Category Stats
         const categoryStats: Record<string, number> = {};
         team.submissions.forEach(sub => {
-            const theme = sub.challenge.theme || 'Misc';
-            categoryStats[theme] = (categoryStats[theme] || 0) + 1;
+            const themeName = sub.challenge.theme?.name || 'Misc';
+            categoryStats[themeName] = (categoryStats[themeName] || 0) + 1;
         });
 
         // Format Response
@@ -81,8 +81,7 @@ export async function GET(
             members: team.members.map(m => ({
                 id: m.id,
                 name: m.name,
-                email: m.email, // Consider masking this? Public profile... maybe just name.
-                // For now, let's keep it but frontend can choose to hide.
+                email: m.email,
                 points: m.points,
                 profileUrl: m.profileUrl,
                 role: m.role
@@ -91,7 +90,7 @@ export async function GET(
                 id: sub.challenge.id,
                 title: sub.challenge.title,
                 points: sub.challenge.points,
-                theme: sub.challenge.theme,
+                theme: sub.challenge.theme?.name || 'Misc',
                 solvedAt: sub.createdAt,
                 solvedBy: {
                     id: sub.user.id,
