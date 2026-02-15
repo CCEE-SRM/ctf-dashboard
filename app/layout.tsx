@@ -42,8 +42,12 @@ const pixelifySans = Pixelify_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "CTF Dashboard",
-  description: "Challenge The Flag Platform",
+  title: "CCEE CTF Dashboard - Capture The Flag Platform",
+  description: "CCEE CTF Dashboard: A comprehensive Capture The Flag platform for cybersecurity challenges, team competitions, and real-time leaderboards.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/logo.png",
+  },
 };
 
 import { AuthProvider } from "@/context/AuthContext";
