@@ -50,14 +50,15 @@ export async function POST(request: Request) {
 
         // 3. Handle Registration / Login Logic
         if (!user) {
-            // New User - Requires Team Registration or Join
-            if (!mode) {
+            const adminEmail = process.env.ADMIN_EMAIL;
+            const isAdmin = adminEmail && email === adminEmail;
+
+            // New User - Requires Team Registration or Join (unless Admin)
+            if (!mode && !isAdmin) {
                 return NextResponse.json({ error: 'User not found. Please Register or Join a Team.', requiresRegistration: true }, { status: 404 });
             }
 
-            // Determine Role (Based on ADMIN_EMAIL env)
-            const adminEmail = process.env.ADMIN_EMAIL;
-            const initialRole: Role = (adminEmail && email === adminEmail) ? Role.ADMIN : Role.USER;
+            const initialRole: Role = isAdmin ? Role.ADMIN : Role.USER;
 
             if (mode === 'REGISTER') {
                 if (!teamName || teamName.trim().length < 3) {
@@ -66,10 +67,6 @@ export async function POST(request: Request) {
 
                 // Generate 4-digit code
                 const code = Math.floor(1000 + Math.random() * 9000).toString();
-
-                // Transaction: Create User -> Create Team -> Link User as Leader
-                // Note: Cyclic dependency (Team needs Leader, User needs Team).
-                // Solution: Create User first, Create Team, Update User.
 
                 try {
                     await prisma.$transaction(async (tx) => {
@@ -95,12 +92,12 @@ export async function POST(request: Request) {
                             }
                         });
 
-                        // 3. Initialize Leaderboard entry for 0 points
+                        // 3. Initialize Leaderboard entry
                         await tx.leaderboard.create({
                             data: {
                                 teamId: newTeam.id,
                                 points: 0,
-                                lastSolveAt: new Date(0), // Epoch
+                                lastSolveAt: new Date(0),
                                 memberDetails: [
                                     {
                                         name: newUser.name,
@@ -119,7 +116,7 @@ export async function POST(request: Request) {
                         });
                     });
                 } catch (e: any) {
-                    if (e.code === 'P2002') { // Unique constraint violation
+                    if (e.code === 'P2002') {
                         return NextResponse.json({ error: 'Team name or code already exists. Try again.' }, { status: 409 });
                     }
                     throw e;
@@ -151,12 +148,22 @@ export async function POST(request: Request) {
                     },
                     include: { team: true }
                 });
+            } else if (isAdmin) {
+                // Admin auto-registration without mode
+                user = await prisma.user.create({
+                    data: {
+                        email,
+                        name: displayName || null,
+                        profileUrl: photoUrl || null,
+                        role: Role.ADMIN,
+                    },
+                    include: { team: true }
+                });
             } else {
                 return NextResponse.json({ error: 'Invalid mode' }, { status: 400 });
             }
         } else {
-            // User exists - just update profile info if needed (optional) and log in
-            // We can skip profile update for speed or do it asynchronously
+            // User exists - log in
         }
 
         if (!user) {
