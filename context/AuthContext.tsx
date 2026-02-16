@@ -76,7 +76,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (response.ok) {
                 setDbUser(data.user);
                 // Optionally store data.token (JWT) here
-                console.log("App Token:", data.token);
                 setToken(data.token);
                 setSyncedUid(firebaseUser.uid);
                 // Clear registration data after success
