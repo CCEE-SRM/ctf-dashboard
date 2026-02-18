@@ -3,6 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import NextImage from "next/image";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -109,7 +110,14 @@ export default function Home() {
           <div className="text-center animate-in fade-in zoom-in duration-500">
             {/* Logo */}
             <div className="mb-4 inline-block relative">
-              <div className="text-6xl mb-2">🚩</div>
+              <NextImage
+                src="/logo.png"
+                alt="CTF Logo"
+                width={120}
+                height={120}
+                className="pixelated"
+                priority
+              />
             </div>
 
             <h1 className="text-6xl md:text-8xl font-pixel mb-12 tracking-tighter">
