@@ -173,7 +173,7 @@ export default function AdminDashboardPage() {
         </div>
     );
 
-    if (!dbUser || dbUser.role !== 'ADMIN') {
+    if (!dbUser || (dbUser.role !== 'ADMIN' && dbUser.role !== 'CHALLENGE_CREATOR')) {
         return (
             <div className="min-h-screen bg-zinc-100 flex items-center justify-center p-8">
                 <div className="bg-white border-4 border-red-600 p-8 shadow-[8px_8px_0px_0px_rgba(220,38,38,1)] text-center max-w-md">
@@ -209,18 +209,24 @@ export default function AdminDashboardPage() {
                                 <span className="stats-link-icon">⚔️</span>
                                 <span className="stats-link-text">Challenges</span>
                             </Link>
-                            <Link href="/admin/users" className="stats-link group">
-                                <span className="stats-link-icon">👥</span>
-                                <span className="stats-link-text">Personnel</span>
-                            </Link>
-                            <Link href="/admin/announcements" className="stats-link group">
-                                <span className="stats-link-icon">📢</span>
-                                <span className="stats-link-text">Intel</span>
-                            </Link>
-                            <Link href="/admin/seed" className="stats-link group text-zinc-400 opacity-50 hover:opacity-100">
-                                <span className="stats-link-icon">💾</span>
-                                <span className="stats-link-text">System</span>
-                            </Link>
+                            {dbUser.role === 'ADMIN' && (
+                                <Link href="/admin/users" className="stats-link group">
+                                    <span className="stats-link-icon">👥</span>
+                                    <span className="stats-link-text">Personnel</span>
+                                </Link>
+                            )}
+                            {dbUser.role === 'ADMIN' && (
+                                <Link href="/admin/announcements" className="stats-link group">
+                                    <span className="stats-link-icon">📢</span>
+                                    <span className="stats-link-text">Intel</span>
+                                </Link>
+                            )}
+                            {dbUser.role === 'ADMIN' && (
+                                <Link href="/admin/seed" className="stats-link group text-zinc-400 opacity-50 hover:opacity-100">
+                                    <span className="stats-link-icon">💾</span>
+                                    <span className="stats-link-text">System</span>
+                                </Link>
+                            )}
                         </nav>
                     </div>
                 </header>
@@ -260,105 +266,110 @@ export default function AdminDashboardPage() {
                     {/* LEFT SIDE: Operations Control (Col 4) */}
                     <div className="lg:col-span-12 xl:col-span-4 space-y-8">
 
-                        {/* THE RED BUTTON / EVENT STATE */}
-                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
-                            <div className="absolute top-2 right-2 flex gap-1">
-                                {[1, 2, 3].map(i => <div key={i} className={`w-2 h-2 border border-black ${config.eventState === 'START' ? 'animate-pulse bg-green-500' : 'bg-transparent'}`}></div>)}
-                            </div>
-
-                            <h2 className="text-3xl font-pixel mb-8 border-b-2 border-black pb-2 flex items-center gap-3">
-                                <span>EVENT SIGNAL</span>
-                                {config.eventState === 'START' && <div className="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-ping"></div>}
-                            </h2>
-
-                            <div className="grid grid-cols-1 gap-4 font-pixel">
-                                <button
-                                    onClick={() => handleConfigUpdate({ eventState: 'START' })}
-                                    className={`control-btn ${config.eventState === 'START' ? 'bg-green-500 border-black shadow-[4px_4px_0px_0px_black]' : 'bg-zinc-100 text-zinc-400 border-zinc-300'}`}
-                                >
-                                    <span className="flex items-center gap-4">
-                                        <div className={`w-6 h-6 border-4 flex items-center justify-center ${config.eventState === 'START' ? 'border-black' : 'border-zinc-300'}`}>
-                                            {config.eventState === 'START' && <div className="w-2 h-2 bg-black"></div>}
-                                        </div>
-                                        GO LIVE (START)
-                                    </span>
-                                </button>
-
-                                <button
-                                    onClick={() => handleConfigUpdate({ eventState: 'PAUSE' })}
-                                    className={`control-btn ${config.eventState === 'PAUSE' ? 'bg-yellow-400 border-black shadow-[4px_4px_0px_0px_black]' : 'bg-zinc-100 text-zinc-400 border-zinc-300'}`}
-                                >
-                                    <span className="flex items-center gap-4">
-                                        <div className={`w-6 h-6 border-4 flex items-center justify-center ${config.eventState === 'PAUSE' ? 'border-black' : 'border-zinc-300'}`}>
-                                            {config.eventState === 'PAUSE' && <div className="w-2 h-2 bg-black"></div>}
-                                        </div>
-                                        HOLD FIRE (PAUSE)
-                                    </span>
-                                </button>
-
-                                <button
-                                    onClick={() => handleConfigUpdate({ eventState: 'STOP' })}
-                                    className={`control-btn ${config.eventState === 'STOP' ? 'bg-red-500 text-white border-black shadow-[4px_4px_0px_0px_black]' : 'bg-zinc-100 text-zinc-400 border-zinc-300'}`}
-                                >
-                                    <span className="flex items-center gap-4">
-                                        <div className={`w-6 h-6 border-4 flex items-center justify-center ${config.eventState === 'STOP' ? 'border-white' : 'border-zinc-300'}`}>
-                                            {config.eventState === 'STOP' && <div className="w-2 h-2 bg-white"></div>}
-                                        </div>
-                                        ABORT MISSION (STOP)
-                                    </span>
-                                </button>
-                            </div>
-
-                            <div className={`mt-8 p-4 border-2 border-black font-mono-retro text-xs uppercase transition-colors ${config.eventState === 'START' ? 'bg-green-50 text-green-700' : config.eventState === 'PAUSE' ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
-                                <div className="font-bold border-b border-black/10 mb-2 pb-1">Operational Protocol:</div>
-                                {config.eventState === 'START' && "Full access enabled. Global submission window open. Monitoring live solves."}
-                                {config.eventState === 'PAUSE' && "Submissions suspended. Database locked for writes. Challenges remain viewable."}
-                                {config.eventState === 'STOP' && "Cease operations. All challenge modules decompiled. Finalizing leaderboard."}
-                            </div>
-                        </div>
-
-                        {/* CONFIG GROUP: SCORING & VISIBILITY */}
-                        <div className="bg-zinc-900 text-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                            <h2 className="text-2xl font-pixel mb-6 border-b border-white/20 pb-2 text-purple-400 uppercase">Core Logic</h2>
-
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-lg uppercase tracking-tight">Dynamic Scoring</span>
-                                        <span className="text-[10px] text-zinc-500 font-mono italic max-w-[200px]">Challenges lose value as solve count rises.</span>
-                                    </div>
-                                    <Toggle
-                                        enabled={config.dynamicScoring}
-                                        onClick={() => handleConfigUpdate({ dynamicScoring: !config.dynamicScoring })}
-                                        activeColor="bg-purple-600"
-                                    />
+                        {dbUser.role === 'ADMIN' && (
+                            <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
+                                <div className="absolute top-2 right-2 flex gap-1">
+                                    {[1, 2, 3].map(i => <div key={i} className={`w-2 h-2 border border-black ${config.eventState === 'START' ? 'animate-pulse bg-green-500' : 'bg-transparent'}`}></div>)}
                                 </div>
 
-                                <div className="h-px bg-white/10 w-full"></div>
+                                <h2 className="text-3xl font-pixel mb-8 border-b-2 border-black pb-2 flex items-center gap-3">
+                                    <span>EVENT SIGNAL</span>
+                                    {config.eventState === 'START' && <div className="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-ping"></div>}
+                                </h2>
 
-                                <div className="flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-lg uppercase tracking-tight">Public Challenges</span>
-                                        <span className="text-[10px] text-zinc-500 font-mono italic">Allow guests to view the challenge list.</span>
-                                    </div>
-                                    <Toggle
-                                        enabled={config.publicChallenges}
-                                        onClick={() => handleConfigUpdate({ publicChallenges: !config.publicChallenges })}
-                                    />
+                                <div className="grid grid-cols-1 gap-4 font-pixel">
+                                    <button
+                                        onClick={() => handleConfigUpdate({ eventState: 'START' })}
+                                        className={`control-btn ${config.eventState === 'START' ? 'bg-green-500 border-black shadow-[4px_4px_0px_0px_black]' : 'bg-zinc-100 text-zinc-400 border-zinc-300'}`}
+                                    >
+                                        <span className="flex items-center gap-4">
+                                            <div className={`w-6 h-6 border-4 flex items-center justify-center ${config.eventState === 'START' ? 'border-black' : 'border-zinc-300'}`}>
+                                                {config.eventState === 'START' && <div className="w-2 h-2 bg-black"></div>}
+                                            </div>
+                                            GO LIVE (START)
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => handleConfigUpdate({ eventState: 'PAUSE' })}
+                                        className={`control-btn ${config.eventState === 'PAUSE' ? 'bg-yellow-400 border-black shadow-[4px_4px_0px_0px_black]' : 'bg-zinc-100 text-zinc-400 border-zinc-300'}`}
+                                    >
+                                        <span className="flex items-center gap-4">
+                                            <div className={`w-6 h-6 border-4 flex items-center justify-center ${config.eventState === 'PAUSE' ? 'border-black' : 'border-zinc-300'}`}>
+                                                {config.eventState === 'PAUSE' && <div className="w-2 h-2 bg-black"></div>}
+                                            </div>
+                                            HOLD FIRE (PAUSE)
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => handleConfigUpdate({ eventState: 'STOP' })}
+                                        className={`control-btn ${config.eventState === 'STOP' ? 'bg-red-500 text-white border-black shadow-[4px_4px_0px_0px_black]' : 'bg-zinc-100 text-zinc-400 border-zinc-300'}`}
+                                    >
+                                        <span className="flex items-center gap-4">
+                                            <div className={`w-6 h-6 border-4 flex items-center justify-center ${config.eventState === 'STOP' ? 'border-white' : 'border-zinc-300'}`}>
+                                                {config.eventState === 'STOP' && <div className="w-2 h-2 bg-white"></div>}
+                                            </div>
+                                            ABORT MISSION (STOP)
+                                        </span>
+                                    </button>
                                 </div>
 
-                                <div className="flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-lg uppercase tracking-tight">Public Scoreboard</span>
-                                        <span className="text-[10px] text-zinc-500 font-mono italic">Allow anyone to view team rankings.</span>
-                                    </div>
-                                    <Toggle
-                                        enabled={config.publicLeaderboard}
-                                        onClick={() => handleConfigUpdate({ publicLeaderboard: !config.publicLeaderboard })}
-                                    />
+                                <div className={`mt-8 p-4 border-2 border-black font-mono-retro text-xs uppercase transition-colors ${config.eventState === 'START' ? 'bg-green-50 text-green-700' : config.eventState === 'PAUSE' ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
+                                    <div className="font-bold border-b border-black/10 mb-2 pb-1">Operational Protocol:</div>
+                                    {config.eventState === 'START' && "Full access enabled. Global submission window open. Monitoring live solves."}
+                                    {config.eventState === 'PAUSE' && "Submissions suspended. Database locked for writes. Challenges remain viewable."}
+                                    {config.eventState === 'STOP' && "Cease operations. All challenge modules decompiled. Finalizing leaderboard."}
                                 </div>
                             </div>
-                        </div>
+                        )}
+
+                        {dbUser.role === 'ADMIN' && (
+                            <>
+                                {/* CONFIG GROUP: SCORING & VISIBILITY */}
+                                <div className="bg-zinc-900 text-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                    <h2 className="text-2xl font-pixel mb-6 border-b border-white/20 pb-2 text-purple-400 uppercase">Core Logic</h2>
+
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-lg uppercase tracking-tight">Dynamic Scoring</span>
+                                                <span className="text-[10px] text-zinc-500 font-mono italic max-w-[200px]">Challenges lose value as solve count rises.</span>
+                                            </div>
+                                            <Toggle
+                                                enabled={config.dynamicScoring}
+                                                onClick={() => handleConfigUpdate({ dynamicScoring: !config.dynamicScoring })}
+                                                activeColor="bg-purple-600"
+                                            />
+                                        </div>
+
+                                        <div className="h-px bg-white/10 w-full"></div>
+
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-lg uppercase tracking-tight">Public Challenges</span>
+                                                <span className="text-[10px] text-zinc-500 font-mono italic">Allow guests to view the challenge list.</span>
+                                            </div>
+                                            <Toggle
+                                                enabled={config.publicChallenges}
+                                                onClick={() => handleConfigUpdate({ publicChallenges: !config.publicChallenges })}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-lg uppercase tracking-tight">Public Scoreboard</span>
+                                                <span className="text-[10px] text-zinc-500 font-mono italic">Allow anyone to view team rankings.</span>
+                                            </div>
+                                            <Toggle
+                                                enabled={config.publicLeaderboard}
+                                                onClick={() => handleConfigUpdate({ publicLeaderboard: !config.publicLeaderboard })}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* RIGHT SIDE: Intelligence Hub (Col 8) */}
@@ -375,13 +386,15 @@ export default function AdminDashboardPage() {
                                     <Link href="/leaderboard" className="bg-zinc-100 border-2 border-black p-2 hover:bg-zinc-200 transition-all font-pixel text-[10px] uppercase">
                                         Monitor Public
                                     </Link>
-                                    <button
-                                        onClick={handleCacheReset}
-                                        disabled={resettingCache}
-                                        className="bg-red-600 text-white p-2 hover:bg-red-700 transition-all font-pixel text-[10px] uppercase disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
-                                    >
-                                        {resettingCache ? 'Clearing...' : 'Clear Cache 🗑️'}
-                                    </button>
+                                    {dbUser.role === 'ADMIN' && (
+                                        <button
+                                            onClick={handleCacheReset}
+                                            disabled={resettingCache}
+                                            className="bg-red-600 text-white p-2 hover:bg-red-700 transition-all font-pixel text-[10px] uppercase disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
+                                        >
+                                            {resettingCache ? 'Clearing...' : 'Clear Cache 🗑️'}
+                                        </button>
+                                    )}
                                     <button onClick={fetchData} className="bg-black text-white p-2 hover:bg-zinc-800 transition-all font-pixel text-[10px] uppercase">
                                         Refresh Data
                                     </button>
@@ -443,29 +456,31 @@ export default function AdminDashboardPage() {
                         </div>
 
                         {/* RATE LIMIT SETTINGS */}
-                        <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="md:col-span-3 border-b-2 border-black pb-2 mb-2 flex justify-between items-center">
-                                <h2 className="text-xl font-pixel uppercase tracking-tight">Security Protocols (Rate Limits)</h2>
-                                <span className="text-[10px] font-mono italic text-zinc-500">Global Anti-Brute Mitigation</span>
-                            </div>
-
-                            {[
-                                { label: 'Max Attempts', key: 'maxAttempts', helper: 'X Allowed Submissions' },
-                                { label: 'Window Window', key: 'windowSeconds', helper: 'Time in Seconds' },
-                                { label: 'Cooldown', key: 'cooldownSeconds', helper: 'Wait Penalty' }
-                            ].map(field => (
-                                <div key={field.key} className="flex flex-col gap-1">
-                                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{field.label}</label>
-                                    <input
-                                        type="number"
-                                        value={config.rateLimit[field.key as keyof typeof config.rateLimit]}
-                                        onChange={(e) => handleConfigUpdate({ rateLimit: { ...config.rateLimit, [field.key]: parseInt(e.target.value) || 0 } })}
-                                        className="border-2 border-black p-2 font-pixel text-lg focus:bg-yellow-50 outline-none transition-colors"
-                                    />
-                                    <span className="text-[10px] font-mono text-zinc-400 italic">{field.helper}</span>
+                        {dbUser.role === 'ADMIN' && (
+                            <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="md:col-span-3 border-b-2 border-black pb-2 mb-2 flex justify-between items-center">
+                                    <h2 className="text-xl font-pixel uppercase tracking-tight">Security Protocols (Rate Limits)</h2>
+                                    <span className="text-[10px] font-mono italic text-zinc-500">Global Anti-Brute Mitigation</span>
                                 </div>
-                            ))}
-                        </div>
+
+                                {[
+                                    { label: 'Max Attempts', key: 'maxAttempts', helper: 'X Allowed Submissions' },
+                                    { label: 'Window Window', key: 'windowSeconds', helper: 'Time in Seconds' },
+                                    { label: 'Cooldown', key: 'cooldownSeconds', helper: 'Wait Penalty' }
+                                ].map(field => (
+                                    <div key={field.key} className="flex flex-col gap-1">
+                                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{field.label}</label>
+                                        <input
+                                            type="number"
+                                            value={config.rateLimit[field.key as keyof typeof config.rateLimit]}
+                                            onChange={(e) => handleConfigUpdate({ rateLimit: { ...config.rateLimit, [field.key]: parseInt(e.target.value) || 0 } })}
+                                            className="border-2 border-black p-2 font-pixel text-lg focus:bg-yellow-50 outline-none transition-colors"
+                                        />
+                                        <span className="text-[10px] font-mono text-zinc-400 italic">{field.helper}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

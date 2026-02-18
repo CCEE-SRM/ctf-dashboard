@@ -101,8 +101,8 @@ export default function AdminChallengesPage() {
 
     if (loading || loadingData) return <div className="p-8 font-mono-retro text-black">Loading...</div>;
 
-    if (!dbUser || dbUser.role !== 'ADMIN') {
-        return <div className="p-8 text-red-600 font-pixel">Access Denied. Admins only.</div>;
+    if (!dbUser || (dbUser.role !== 'ADMIN' && dbUser.role !== 'CHALLENGE_CREATOR')) {
+        return <div className="p-8 text-red-600 font-pixel">Access Denied. Staff only.</div>;
     }
 
     return (
@@ -119,21 +119,23 @@ export default function AdminChallengesPage() {
                         </p>
                     </div>
                     <div className="flex flex-col items-end gap-4">
-                        <div className="flex items-center gap-2 bg-white border-2 border-black p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                            <span className="font-pixel text-sm uppercase">Scoring Mode:</span>
-                            <button
-                                onClick={handleToggleScoring}
-                                className={`px-3 py-1 font-bold border-2 border-black transition-all ${dynamicScoring ? 'bg-purple-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}
-                            >
-                                DYNAMIC
-                            </button>
-                            <button
-                                onClick={handleToggleScoring}
-                                className={`px-3 py-1 font-bold border-2 border-black transition-all ${!dynamicScoring ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}
-                            >
-                                STATIC
-                            </button>
-                        </div>
+                        {dbUser.role === 'ADMIN' && (
+                            <div className="flex items-center gap-2 bg-white border-2 border-black p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                <span className="font-pixel text-sm uppercase">Scoring Mode:</span>
+                                <button
+                                    onClick={handleToggleScoring}
+                                    className={`px-3 py-1 font-bold border-2 border-black transition-all ${dynamicScoring ? 'bg-purple-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}
+                                >
+                                    DYNAMIC
+                                </button>
+                                <button
+                                    onClick={handleToggleScoring}
+                                    className={`px-3 py-1 font-bold border-2 border-black transition-all ${!dynamicScoring ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}
+                                >
+                                    STATIC
+                                </button>
+                            </div>
+                        )}
 
                         <div className="flex gap-4">
                             <Link

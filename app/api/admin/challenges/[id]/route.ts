@@ -1,12 +1,12 @@
 
 import { prisma } from '@/lib/prisma';
 import { redis } from '@/lib/redis';
-import { adminOnly } from '@/lib/auth-middleware';
+import { staffOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
 
 // PUT: Update an existing challenge
-export const PUT = adminOnly(async (req: AuthenticatedRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PUT = staffOnly(async (req: AuthenticatedRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
         const { id } = await params;
         const challengeId = id;
@@ -76,7 +76,7 @@ export const PUT = adminOnly(async (req: AuthenticatedRequest, { params }: { par
 });
 
 // DELETE: Remove a challenge
-export const DELETE = adminOnly(async (req: AuthenticatedRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const DELETE = staffOnly(async (req: AuthenticatedRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
         const { id } = await params;
         const challengeId = id;

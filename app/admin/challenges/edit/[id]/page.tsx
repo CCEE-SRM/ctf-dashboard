@@ -113,8 +113,8 @@ export default function EditChallengePage({ params }: { params: Promise<{ id: st
 
     if (loading || loadingData) return <div className="p-8 font-mono-retro">Loading...</div>;
 
-    if (!dbUser || dbUser.role !== 'ADMIN') {
-        return <div className="p-8 text-red-600 font-pixel">Access Denied. Admins only.</div>;
+    if (!dbUser || (dbUser.role !== 'ADMIN' && dbUser.role !== 'CHALLENGE_CREATOR')) {
+        return <div className="p-8 text-red-600 font-pixel">Access Denied. Staff only.</div>;
     }
 
     return (

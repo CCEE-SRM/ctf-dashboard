@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/prisma';
-import { adminOnly } from '@/lib/auth-middleware';
+import { staffOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
 
-export const GET = adminOnly(async () => {
+export const GET = staffOnly(async () => {
     try {
         const themes = await prisma.theme.findMany({
             orderBy: { name: 'asc' }
@@ -15,7 +15,7 @@ export const GET = adminOnly(async () => {
     }
 });
 
-export const POST = adminOnly(async (req: AuthenticatedRequest) => {
+export const POST = staffOnly(async (req: AuthenticatedRequest) => {
     try {
         const body = await req.json();
         const { name } = body;

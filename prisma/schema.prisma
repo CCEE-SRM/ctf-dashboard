@@ -12,6 +12,7 @@ datasource db {
 enum Role {
   USER
   ADMIN
+  CHALLENGE_CREATOR
 }
 
 model User {

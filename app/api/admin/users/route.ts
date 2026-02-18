@@ -46,10 +46,15 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
         }
 
         const body = await req.json().catch(() => ({}));
-        const { email } = body;
+        const { email, role = 'ADMIN' } = body;
 
         if (!email || !email.includes('@')) {
             return NextResponse.json({ error: 'Valid email is required' }, { status: 400 });
+        }
+
+        const validRoles = ['ADMIN', 'CHALLENGE_CREATOR'];
+        if (!validRoles.includes(role)) {
+            return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
         }
 
         const normalizedEmail = email.toLowerCase().trim();
@@ -60,23 +65,23 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
         });
 
         if (user) {
-            // Update to ADMIN
+            // Update to specific role
             user = await prisma.user.update({
                 where: { email: normalizedEmail },
-                data: { role: 'ADMIN' }
+                data: { role: role as 'ADMIN' | 'CHALLENGE_CREATOR' }
             });
         } else {
-            // Create as ADMIN
+            // Create as specific role
             user = await prisma.user.create({
                 data: {
                     email: normalizedEmail,
-                    role: 'ADMIN',
+                    role: role as 'ADMIN' | 'CHALLENGE_CREATOR',
                     name: email.split('@')[0] // Default name from email
                 }
             });
         }
 
-        return NextResponse.json({ message: 'Admin added successfully', user });
+        return NextResponse.json({ message: 'User added successfully', user });
     } catch (error) {
         console.error('Failed to add admin:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -103,7 +108,7 @@ export const PATCH = authenticated(async (req: AuthenticatedRequest) => {
 
         const updated = await prisma.user.update({
             where: { id: userId },
-            data: { role: role as 'USER' | 'ADMIN' }
+            data: { role: role as 'USER' | 'ADMIN' | 'CHALLENGE_CREATOR' }
         });
 
         return NextResponse.json({ message: 'Role updated', user: updated });
