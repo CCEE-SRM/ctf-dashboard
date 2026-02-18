@@ -11,6 +11,7 @@ interface Challenge {
     theme?: { name: string };
     points: number;
     visible: boolean;
+    authorId?: string | null;
     createdAt: string;
 }
 
@@ -183,18 +184,24 @@ export default function AdminChallengesPage() {
                                             </span>
                                         </td>
                                         <td className="p-4 text-right space-x-4">
-                                            <Link
-                                                href={`/admin/challenges/edit/${challenge.id}`}
-                                                className="inline-block text-blue-600 hover:text-blue-800 font-bold hover:underline font-pixel uppercase tracking-wide"
-                                            >
-                                                [ Edit ]
-                                            </Link>
-                                            <button
-                                                onClick={() => handleDelete(challenge.id)}
-                                                className="inline-block text-red-600 hover:text-red-800 font-bold hover:underline font-pixel uppercase tracking-wide"
-                                            >
-                                                [ Delete ]
-                                            </button>
+                                            {(dbUser?.role === 'ADMIN' || challenge.authorId === dbUser?.userId) ? (
+                                                <>
+                                                    <Link
+                                                        href={`/admin/challenges/edit/${challenge.id}`}
+                                                        className="inline-block text-blue-600 hover:text-blue-800 font-bold hover:underline font-pixel uppercase tracking-wide"
+                                                    >
+                                                        [ Edit ]
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(challenge.id)}
+                                                        className="inline-block text-red-600 hover:text-red-800 font-bold hover:underline font-pixel uppercase tracking-wide"
+                                                    >
+                                                        [ Delete ]
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span className="text-zinc-400 font-pixel text-xs uppercase italic">Locked</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

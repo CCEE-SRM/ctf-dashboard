@@ -266,6 +266,42 @@ export default function AdminDashboardPage() {
                     {/* LEFT SIDE: Operations Control (Col 4) */}
                     <div className="lg:col-span-12 xl:col-span-4 space-y-8">
 
+                        {dbUser.role === 'CHALLENGE_CREATOR' && (
+                            <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
+                                <div className="absolute -top-1 -right-1 bg-yellow-400 border-2 border-black px-2 py-0.5 text-[8px] font-pixel z-10 uppercase">
+                                    Active Duty
+                                </div>
+                                <h2 className="text-3xl font-pixel mb-6 border-b-2 border-black pb-2">Creator Workspace</h2>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <Link href="/admin/challenges/create" className="flex items-center justify-between p-4 bg-zinc-50 border-2 border-black hover:bg-retro-green transition-colors group">
+                                        <div className="flex flex-col">
+                                            <span className="font-pixel text-sm uppercase">Deploy Challenge</span>
+                                            <span className="text-[10px] font-mono text-zinc-500 uppercase">Initialize new target node</span>
+                                        </div>
+                                        <span className="text-2xl group-hover:scale-125 transition-transform">⚔️</span>
+                                    </Link>
+                                    <Link href="/admin/themes" className="flex items-center justify-between p-4 bg-zinc-50 border-2 border-black hover:bg-purple-100 transition-colors group">
+                                        <div className="flex flex-col">
+                                            <span className="font-pixel text-sm uppercase">Manage Themes</span>
+                                            <span className="text-[10px] font-mono text-zinc-500 uppercase">Classify operation sectors</span>
+                                        </div>
+                                        <span className="text-2xl group-hover:scale-125 transition-transform">📁</span>
+                                    </Link>
+                                    <Link href="/admin/challenges" className="flex items-center justify-between p-4 bg-zinc-50 border-2 border-black hover:bg-yellow-50 transition-colors group">
+                                        <div className="flex flex-col">
+                                            <span className="font-pixel text-sm uppercase">Inventory List</span>
+                                            <span className="text-[10px] font-mono text-zinc-500 uppercase">Review all active modules</span>
+                                        </div>
+                                        <span className="text-2xl group-hover:scale-125 transition-transform">📋</span>
+                                    </Link>
+                                </div>
+                                <div className="mt-6 p-4 bg-zinc-900 text-retro-green border-2 border-black font-mono-retro text-[10px] leading-relaxed">
+                                    <span className="text-white font-bold block mb-1 underline">CREATOR_PROTOCOL_v1.0</span>
+                                    You have internal clearance to modify challenge assets. Please ensure all flags follow standard encryption formats.
+                                </div>
+                            </div>
+                        )}
+
                         {dbUser.role === 'ADMIN' && (
                             <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
                                 <div className="absolute top-2 right-2 flex gap-1">

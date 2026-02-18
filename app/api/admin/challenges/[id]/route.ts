@@ -24,6 +24,11 @@ export const PUT = staffOnly(async (req: AuthenticatedRequest, { params }: { par
             return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
         }
 
+        // Ownership Check: Creators can only edit their own challenges
+        if (req.user.role === 'CHALLENGE_CREATOR' && existingChallenge.authorId !== req.user.userId) {
+            return NextResponse.json({ error: 'Forbidden: You can only edit your own challenges' }, { status: 403 });
+        }
+
         const updatedChallenge = await prisma.$transaction(async (tx) => {
             // Updated basic fields
             const c = await tx.challenge.update({
@@ -88,6 +93,11 @@ export const DELETE = staffOnly(async (req: AuthenticatedRequest, { params }: { 
 
         if (!existingChallenge) {
             return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
+        }
+
+        // Ownership Check: Creators can only delete their own challenges
+        if (req.user.role === 'CHALLENGE_CREATOR' && existingChallenge.authorId !== req.user.userId) {
+            return NextResponse.json({ error: 'Forbidden: You can only delete your own challenges' }, { status: 403 });
         }
 
         // Transaction to delete related submissions? 
