@@ -331,23 +331,36 @@ export default function ChallengesPage() {
 
                             {/* Description */}
                             <div className="prose prose-p:font-mono-retro prose-headings:font-pixel font-normal max-w-none text-xl mb-8 relative z-10 bg-white/80 p-4 border border-zinc-100 backdrop-blur-sm rounded">
-                                <ReactMarkdown>{selectedChallenge.description}</ReactMarkdown>
+                                <ReactMarkdown
+                                    components={{
+                                        p: ({ node, ...props }) => <p className="whitespace-pre-wrap mb-4" {...props} />
+                                    }}
+                                >
+                                    {selectedChallenge.description}
+                                </ReactMarkdown>
                             </div>
 
-                            {/* Link Button */}
-                            <div className="mb-8">
-                                <a
-                                    href={selectedChallenge.link || "#"}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex bg-purple-600 text-white font-bold py-2 px-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all items-center gap-2 border-2 border-black no-underline"
-                                >
-                                    <span>🔗 Link</span>
-                                    <span className="font-mono text-sm bg-black/20 px-2 rounded truncate max-w-[200px]">
-                                        {selectedChallenge.link || "No Link Provided"}
-                                    </span>
-                                </a>
-                            </div>
+                            {/* Link Buttons */}
+                            {selectedChallenge.link && (
+                                <div className="mb-8 flex flex-wrap gap-4">
+                                    {selectedChallenge.link.split('\n').filter(l => l.trim()).map((url, idx) => (
+                                        <a
+                                            key={idx}
+                                            href={url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex bg-purple-600 text-white font-bold py-2 px-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all items-center gap-2 border-2 border-black no-underline"
+                                        >
+                                            <span>🔗 {url.trim().length > 20 ? 'Link' : url.trim()}</span>
+                                            {url.trim().length > 20 && (
+                                                <span className="font-mono text-sm bg-black/20 px-2 rounded truncate max-w-[200px]">
+                                                    {url.trim()}
+                                                </span>
+                                            )}
+                                        </a>
+                                    ))}
+                                </div>
+                            )}
 
                             {/* Separator */}
                             <div className="w-full h-[2px] bg-black my-8 opacity-20"></div>

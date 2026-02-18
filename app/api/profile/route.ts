@@ -148,3 +148,33 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 });
+
+export const PUT = authenticated(async (req: AuthenticatedRequest) => {
+    try {
+        const userId = req.user.userId;
+        const { name } = await req.json();
+
+        if (name !== undefined && (typeof name !== 'string' || name.length > 50)) {
+            return NextResponse.json({ error: 'Invalid name format or length' }, { status: 400 });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: { name: name || null },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                profileUrl: true,
+                points: true,
+                role: true
+            }
+        });
+
+        return NextResponse.json({ message: 'Profile updated successfully', user: updatedUser });
+
+    } catch (error) {
+        console.error('Profile update error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+});

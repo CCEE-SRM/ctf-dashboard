@@ -56,6 +56,9 @@ export default function ProfilePage() {
     const [solvedChallenges, setSolvedChallenges] = useState<SolvedChallenge[]>([]);
     const [hintPurchases, setHintPurchases] = useState<HintPurchase[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [newName, setNewName] = useState("");
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -74,6 +77,7 @@ export default function ProfilePage() {
                 if (res.ok) {
                     const data = await res.json();
                     setProfile(data.user);
+                    setNewName(data.user.name || "");
                     setSolvedChallenges(data.solvedChallenges);
                     setHintPurchases(data.hintPurchases);
                 } else {
@@ -90,6 +94,34 @@ export default function ProfilePage() {
             fetchProfile();
         }
     }, [user, authLoading, token, router]);
+
+    const handleUpdateName = async () => {
+        if (!newName.trim()) return;
+        setSaving(true);
+        try {
+            const res = await fetch("/api/profile", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ name: newName.trim() })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setProfile(prev => prev ? { ...prev, name: data.user.name } : null);
+                setIsEditing(false);
+            } else {
+                alert("Failed to update name");
+            }
+        } catch (error) {
+            console.error("Update name error:", error);
+            alert("Network error");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     if (authLoading || loading) {
         return <div className="min-h-screen bg-zinc-100 flex items-center justify-center font-pixel text-xl animate-pulse">LOADING PROFILE...</div>;
@@ -137,8 +169,47 @@ export default function ProfilePage() {
                                     </div>
                                 )}
                             </div>
-                            <h1 className="text-xl font-bold font-pixel text-center uppercase truncate">{profile.name || "Anonymous"}</h1>
-                            <p className="text-zinc-500 text-xs text-center font-mono mb-4">{profile.email}</p>
+                            {isEditing ? (
+                                <div className="space-y-4">
+                                    <input
+                                        type="text"
+                                        className="w-full bg-zinc-50 border-2 border-black p-2 font-mono text-center focus:outline-none focus:shadow-[4px_4px_0px_0px_#ccff00]"
+                                        value={newName}
+                                        onChange={(e) => setNewName(e.target.value)}
+                                        placeholder="Enter name..."
+                                        maxLength={50}
+                                        autoFocus
+                                    />
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={handleUpdateName}
+                                            disabled={saving}
+                                            className="flex-1 bg-retro-green border-2 border-black font-bold py-1 text-xs uppercase hover:bg-green-400 transition-colors disabled:opacity-50"
+                                        >
+                                            {saving ? "..." : "Save"}
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsEditing(false); setNewName(profile.name || ""); }}
+                                            disabled={saving}
+                                            className="flex-1 bg-white border-2 border-black font-bold py-1 text-xs uppercase hover:bg-zinc-100 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="group relative">
+                                    <h1 className="text-xl font-bold font-pixel text-center uppercase truncate">{profile.name || "Anonymous"}</h1>
+                                    <button
+                                        onClick={() => setIsEditing(true)}
+                                        className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-black transition-all"
+                                        title="Edit Name"
+                                    >
+                                        ✏️
+                                    </button>
+                                </div>
+                            )}
+                            <p className="text-zinc-500 text-xs text-center font-mono mb-4 mt-2">{profile.email}</p>
 
                             <div className="border-t-2 border-dashed border-zinc-300 my-4"></div>
 
