@@ -2,6 +2,7 @@
 
 import { useEffect, useState, ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 
 interface RetroLayoutProps {
@@ -63,8 +64,14 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
 
                     {/* Left: Icon & HUD Status */}
                     <div className="flex items-center gap-6 relative z-10">
-                        <div className="text-5xl animate-bounce">
-                            {title === 'Scoreboard' ? '🏁' : '🚩'}
+                        <div className="w-12 h-12 relative flex items-center justify-center">
+                            <Image
+                                src="/logo.png"
+                                alt="CTF Logo"
+                                fill
+                                className="object-contain"
+                                priority
+                            />
                         </div>
                         <div className="h-12 w-[2px] bg-zinc-300"></div>
                         <div className="flex flex-col gap-1">

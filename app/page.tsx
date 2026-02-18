@@ -104,27 +104,6 @@ export default function Home() {
       {/* Main Center Content */}
       <div className="relative min-h-screen flex flex-col items-center justify-center z-20">
 
-        {/* Decorative Elements (Pixel Clusters) */}
-        <div className="absolute left-10 top-1/3 opacity-20 md:opacity-100">
-          <div className="grid grid-cols-2 gap-1">
-            <div className="w-16 h-16 bg-black"></div>
-            <div className="w-16 h-16 bg-zinc-300"></div>
-            <div className="w-16 h-16 bg-retro-green/50"></div>
-            <div className="w-16 h-16 bg-zinc-200"></div>
-          </div>
-        </div>
-
-        <div className="absolute right-1/4 bottom-10 opacity-20 md:opacity-100">
-          <div className="grid grid-cols-3 gap-1">
-            <div className="w-8 h-8 bg-zinc-300"></div>
-            <div className="w-8 h-8 bg-retro-green/80"></div>
-            <div className="w-8 h-8 bg-black"></div>
-            <div className="w-8 h-8 bg-black"></div>
-            <div className="w-8 h-8 bg-zinc-200"></div>
-            <div className="w-8 h-8 bg-zinc-300"></div>
-          </div>
-        </div>
-
 
         {mode === 'HOME' && (
           <div className="text-center animate-in fade-in zoom-in duration-500">
