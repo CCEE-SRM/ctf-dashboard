@@ -27,6 +27,10 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
         await redis.del('announcements:list');
         console.log('[CACHE INVALIDATE] Deleted announcements:list');
 
+        // Publish Real-time trigger
+        await redis.publish('ctf-triggers', JSON.stringify({ announcements: true, status: true }));
+        console.log('[SSE TRIGGER] Published announcements and status update');
+
         return NextResponse.json(announcement);
     } catch (error) {
         console.error("Failed to create announcement:", error);
@@ -52,6 +56,10 @@ export const DELETE = adminOnly(async (req: AuthenticatedRequest) => {
         // Invalidate Cache
         await redis.del('announcements:list');
         console.log('[CACHE INVALIDATE] Deleted announcements:list');
+
+        // Publish Real-time trigger
+        await redis.publish('ctf-triggers', JSON.stringify({ announcements: true, status: true }));
+        console.log('[SSE TRIGGER] Published announcements and status delete');
 
         return NextResponse.json({ success: true });
     } catch (error) {

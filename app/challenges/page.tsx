@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import RetroLayout from "@/components/RetroLayout";
+import { useTriggerStream } from "@/hooks/useTriggerStream";
 
 interface Challenge {
     id: string;
@@ -49,49 +50,64 @@ export default function ChallengesPage() {
 
     const [accessDenied, setAccessDenied] = useState(false);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Fetch Status
-                const resStatus = await fetch("/api/status");
-                if (resStatus.ok) {
-                    const data = await resStatus.json();
-                    setEventState(data.eventState);
-                }
-
-                // Fetch Challenges
-                // Determine API endpoint based on authentication
-                const endpoint = token ? "/api/challenges" : "/api/challenges/public";
-                const headers: Record<string, string> = {};
-                if (token) headers["Authorization"] = `Bearer ${token}`;
-
-                const res = await fetch(endpoint, { headers });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    setChallenges(data);
-                    setAccessDenied(false);
-                    // Select first category and challenge by default if available
-                    if (data.length > 0) {
-                        const firstTheme = data[0].theme;
-                        setSelectedCategory(firstTheme);
-                        const firstChall = data.find((c: Challenge) => c.theme === firstTheme);
-                        if (firstChall) setSelectedChallenge(firstChall);
-                    }
-                } else if (res.status === 403) {
-                    setAccessDenied(true);
-                }
-            } catch (error) {
-                console.error("Failed to fetch data", error);
-            } finally {
-                setLoading(false);
+    const fetchStatus = async () => {
+        try {
+            const resStatus = await fetch("/api/status");
+            if (resStatus.ok) {
+                const data = await resStatus.json();
+                setEventState(data.eventState);
             }
-        };
+        } catch (error) {
+            console.error("Failed to fetch status", error);
+        }
+    };
 
+    const fetchChallengesList = async () => {
+        try {
+            const endpoint = token ? "/api/challenges" : "/api/challenges/public";
+            const headers: Record<string, string> = {};
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
+            const res = await fetch(endpoint, { headers });
+
+            if (res.ok) {
+                const data = await res.json();
+                setChallenges(data);
+                setAccessDenied(false);
+                if (data.length > 0 && !selectedCategory) {
+                    const firstTheme = data[0].theme;
+                    setSelectedCategory(firstTheme);
+                    const firstChall = data.find((c: Challenge) => c.theme === firstTheme);
+                    if (firstChall) setSelectedChallenge(firstChall);
+                }
+            } else if (res.status === 403) {
+                setAccessDenied(true);
+            }
+        } catch (error) {
+            console.error("Failed to fetch challenges", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         if (!authLoading) {
-            fetchData();
+            fetchStatus();
+            fetchChallengesList();
         }
     }, [token, authLoading]);
+
+    // Real-time updates
+    useTriggerStream((data) => {
+        if (data.status) {
+            console.log('[SSE] Refreshing status...');
+            fetchStatus();
+        }
+        if (data.challenges) {
+            console.log('[SSE] Refreshing challenges...');
+            fetchChallengesList();
+        }
+    });
 
     useEffect(() => {
         if (!cooldownUntil) return;

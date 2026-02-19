@@ -5,6 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 
+import { useTriggerStream } from "@/hooks/useTriggerStream";
+import { NotificationToast } from "./NotificationToast";
+
 interface RetroLayoutProps {
     children: ReactNode;
     title: string; // Text for the left vertical sidebar (e.g., "Challenges", "Scoreboard")
@@ -20,6 +23,7 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
         announcementCount: number
     }>({ topTeam: null, myTeam: null, announcementCount: 0 });
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [notification, setNotification] = useState<string | null>(null);
     const currentDate = new Date().toLocaleDateString('en-GB');
 
     useEffect(() => {
@@ -30,32 +34,51 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
         return () => window.removeEventListener('mousemove', handleMouseMove);
     }, []);
 
-    useEffect(() => {
-        const fetchStatus = async () => {
-            try {
-                const res = await fetch("/api/status", {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+    const fetchStatus = async () => {
+        try {
+            const res = await fetch("/api/status", {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setEventState(data.eventState);
+                setStats({
+                    topTeam: data.topTeam,
+                    myTeam: data.myTeam,
+                    announcementCount: data.announcementCount || 0
                 });
-                if (res.ok) {
-                    const data = await res.json();
-                    setEventState(data.eventState);
-                    setStats({
-                        topTeam: data.topTeam,
-                        myTeam: data.myTeam,
-                        announcementCount: data.announcementCount || 0
-                    });
-                }
-            } catch (error) {
-                console.error("Failed to fetch status", error);
             }
-        };
+        } catch (error) {
+            console.error("Failed to fetch status", error);
+        }
+    };
+
+    useEffect(() => {
         fetchStatus();
-        const interval = setInterval(fetchStatus, 30000); // Polling status every 30s
-        return () => clearInterval(interval);
     }, [token]);
+
+    // Real-time updates for Global Stats & HUD
+    useTriggerStream((data) => {
+        // Always refresh status/stats on any relevant trigger
+        if (data.status || data.leaderboard || data.announcements) {
+            console.log('[RetroLayout] HUD Trigger Refresh');
+            fetchStatus();
+        }
+
+        // Show popup for new announcements
+        if (data.announcements) {
+            setNotification("New system update broadcasted. Check announcements!");
+        }
+    });
 
     return (
         <div className="flex h-screen overflow-hidden bg-retro-bg text-black font-mono-retro">
+            {notification && (
+                <NotificationToast
+                    message={notification}
+                    onClose={() => setNotification(null)}
+                />
+            )}
 
             <div className="flex flex-col flex-1 overflow-hidden min-w-0">
                 {/* 0. TOP HUD (Retro Header) */}

@@ -242,6 +242,14 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
                 console.log('[CACHE INVALIDATE] Deleting challenges:list (Point Decay)');
                 await redis.del('challenges:list'); // Update challenge points if decayed
             }
+
+            // Publish Real-time triggers
+            await redis.publish('ctf-triggers', JSON.stringify({
+                leaderboard: true,
+                challenges: true,
+                status: true
+            }));
+            console.log('[SSE TRIGGER] Published leaderboard, challenges, status update');
         });
 
         const finalChallenge = await prisma.challenge.findUnique({ where: { id: challengeId } });

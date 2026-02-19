@@ -51,6 +51,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/context/AuthContext";
+import { TriggerProvider } from "@/context/TriggerContext";
 
 export default function RootLayout({
   children,
@@ -63,7 +64,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${pressStart2P.variable} ${vt323.variable} ${pixelifySans.variable} antialiased font-sans bg-background text-foreground`}
       >
         <AuthProvider>
-          {children}
+          <TriggerProvider>
+            {children}
+          </TriggerProvider>
         </AuthProvider>
       </body>
     </html>
