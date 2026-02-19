@@ -23,7 +23,7 @@ export const GET = staffOnly(async () => {
 export const POST = staffOnly(async (req: AuthenticatedRequest) => {
     try {
         const body = await req.json();
-        const { title, description, themeId, link, points, flag, thumbnail } = body;
+        const { title, description, themeId, link, points, flag, thumbnail, fileType } = body;
 
         // Basic Validation
         if (!title || !description || !themeId || !flag || points === undefined) {
@@ -40,6 +40,7 @@ export const POST = staffOnly(async (req: AuthenticatedRequest) => {
                 points: Number(points),
                 initialPoints: Number(points),
                 flag,
+                fileType: fileType || 'CHALLENGE',
                 authorId: req.user.userId,
                 hints: {
                     create: (body.hints || []).map((h: any) => ({

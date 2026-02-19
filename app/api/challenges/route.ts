@@ -45,6 +45,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                     theme: {
                         select: { name: true }
                     },
+                    fileType: true,
                     link: true,
                     thumbnail: true,
                     points: true,

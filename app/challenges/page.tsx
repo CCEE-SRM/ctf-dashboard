@@ -11,6 +11,7 @@ interface Challenge {
     title: string;
     description: string;
     theme: string;
+    fileType: 'CHALLENGE' | 'DOWNLOAD' | 'RESOURCE';
     link?: string;
     thumbnail?: string;
     points: number;
@@ -351,7 +352,11 @@ export default function ChallengesPage() {
                                             rel="noopener noreferrer"
                                             className="inline-flex bg-purple-600 text-white font-bold py-2 px-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all items-center gap-2 border-2 border-black no-underline"
                                         >
-                                            <span>🔗 {url.trim().length > 20 ? 'Link' : url.trim()}</span>
+                                            <span>
+                                                {selectedChallenge.fileType === 'DOWNLOAD' ? '💾 DOWNLOAD' :
+                                                    selectedChallenge.fileType === 'RESOURCE' ? '📚 RESOURCE' :
+                                                        '🔗 LINK'}
+                                            </span>
                                             {url.trim().length > 20 && (
                                                 <span className="font-mono text-sm bg-black/20 px-2 rounded truncate max-w-[200px]">
                                                     {url.trim()}

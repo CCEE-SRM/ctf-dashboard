@@ -26,6 +26,7 @@ export async function GET() {
                     title: true,
                     description: true,
                     theme: true,
+                    fileType: true,
                     link: true,
                     thumbnail: true,
                     points: true,

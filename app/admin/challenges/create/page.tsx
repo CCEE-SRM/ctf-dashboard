@@ -17,6 +17,7 @@ export default function CreateChallengePage() {
         thumbnail: "",
         points: 100,
         flag: "",
+        fileType: "CHALLENGE" as "CHALLENGE" | "DOWNLOAD" | "RESOURCE",
         hints: [] as { content: string; cost: number }[]
     });
 
@@ -158,6 +159,22 @@ export default function CreateChallengePage() {
                                 onChange={handleChange}
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-lg font-bold font-pixel uppercase mb-2">File Type / Category</label>
+                        <select
+                            name="fileType"
+                            className="w-full bg-zinc-50 border-2 border-black p-3 font-mono-retro focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                            value={form.fileType}
+                            onChange={handleChange}
+                            required
+                        >
+                            <option value="CHALLENGE">CHALLENGE</option>
+                            <option value="DOWNLOAD">DOWNLOAD</option>
+                            <option value="RESOURCE">RESOURCE</option>
+                        </select>
+                        <p className="text-xs text-zinc-500 mt-1 font-mono uppercase italic">Select how this challenge is categorized in the inventory.</p>
                     </div>
 
                     <div>
