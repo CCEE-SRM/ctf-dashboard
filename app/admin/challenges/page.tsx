@@ -184,7 +184,7 @@ export default function AdminChallengesPage() {
                                             </span>
                                         </td>
                                         <td className="p-4 text-right space-x-4">
-                                            {(dbUser?.role === 'ADMIN' || challenge.authorId === dbUser?.userId) ? (
+                                            {(dbUser?.role === 'ADMIN' || challenge.authorId === dbUser?.id) ? (
                                                 <>
                                                     <Link
                                                         href={`/admin/challenges/edit/${challenge.id}`}
