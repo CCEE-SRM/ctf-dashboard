@@ -47,7 +47,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                                         id: true,
                                         title: true,
                                         points: true,
-                                        theme: true
+                                        theme: { select: { name: true } }
                                     }
                                 }
                             }
@@ -88,7 +88,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                                 id: true,
                                 title: true,
                                 points: true,
-                                theme: true
+                                theme: { select: { name: true } }
                             }
                         }
                     }
@@ -109,7 +109,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
             id: sub.challenge.id,
             title: sub.challenge.title,
             points: sub.challenge.points,
-            theme: sub.challenge.theme,
+            theme: sub.challenge.theme?.name || 'Misc',
             solvedAt: sub.createdAt,
             solvedBy: sub.user?.name || 'Unknown',
             solverId: sub.user?.id

@@ -41,7 +41,9 @@ export async function GET() {
                         challenge: {
                             select: {
                                 points: true,
-                                theme: true
+                                theme: {
+                                    select: { name: true }
+                                }
                             }
                         }
                     },
@@ -56,7 +58,7 @@ export async function GET() {
 
             const history = team.submissions.map((sub: any) => {
                 cumulativeScore += sub.challenge.points;
-                const theme = sub.challenge.theme || 'Misc';
+                const theme = sub.challenge.theme?.name || 'Misc';
                 categoryStats[theme] = (categoryStats[theme] || 0) + 1;
 
                 return {

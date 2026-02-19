@@ -332,7 +332,7 @@ export default function ProfilePage() {
                                             </div>
                                             <div className="col-span-2 text-center">
                                                 <span className="font-mono text-[10px] bg-black text-white px-2 py-0.5 uppercase truncate inline-block max-w-full">
-                                                    {challenge.theme.substring(0, 4)}
+                                                    {challenge.theme?.substring(0, 4) || 'MISC'}
                                                 </span>
                                             </div>
                                             <div className="col-span-2 text-right font-mono font-bold text-retro-green text-sm">

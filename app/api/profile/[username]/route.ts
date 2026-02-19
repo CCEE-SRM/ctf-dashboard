@@ -29,7 +29,7 @@ export async function GET(
                                     id: true,
                                     title: true,
                                     points: true,
-                                    theme: true
+                                    theme: { select: { name: true } }
                                 }
                             }
                         }
@@ -55,7 +55,7 @@ export async function GET(
                                     id: true,
                                     title: true,
                                     points: true,
-                                    theme: true
+                                    theme: { select: { name: true } }
                                 }
                             }
                         }
@@ -85,7 +85,7 @@ export async function GET(
                 id: sub.challenge.id,
                 title: sub.challenge.title,
                 points: sub.challenge.points,
-                theme: sub.challenge.theme,
+                theme: sub.challenge.theme?.name || 'Misc',
                 solvedAt: sub.createdAt
             }))
         };
