@@ -285,10 +285,12 @@ export default function ChallengesPage() {
                         <button
                             key={challenge.id}
                             onClick={() => handleChallengeClick(challenge)}
-                            className={`p-4 border-b border-retro-border/20 text-left transition-colors flex justify-between items-center ${selectedChallenge?.id === challenge.id
-                                ? "bg-white border-l-4 border-l-black"
-                                : "hover:bg-white text-zinc-600"
-                                }`}
+                            className={`p-4 border-b border-retro-border/20 text-left transition-colors flex justify-between items-center ${challenge.solved
+                                ? "bg-retro-green text-black"
+                                : selectedChallenge?.id === challenge.id
+                                    ? "bg-white"
+                                    : "hover:bg-white text-zinc-600"
+                                } ${selectedChallenge?.id === challenge.id ? "border-l-4 border-l-black" : ""}`}
                         >
                             <div className="flex-1 min-w-0 pr-2">
                                 <span className="text-xl font-bold truncate block">{challenge.title.toUpperCase()}</span>
@@ -406,7 +408,7 @@ export default function ChallengesPage() {
                             )}
 
                             {/* Submission Area */}
-                            <div className="bg-zinc-100 p-6 border-2 border-zinc-200">
+                            <div className={`p-6 border-2 transition-all ${selectedChallenge.solved ? 'bg-retro-green border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]' : 'bg-zinc-100 border-zinc-200 shadow-none'}`}>
                                 {eventState !== 'START' && (
                                     <div className="mb-6 bg-yellow-100 border-2 border-yellow-500 p-4 text-yellow-800 font-bold font-pixel text-center uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
                                         ⚠️ EVENT IS {eventState === 'STOP' ? 'STOPPED' : 'PAUSED'}. SUBMISSIONS DISABLED.
@@ -414,7 +416,7 @@ export default function ChallengesPage() {
                                 )}
 
                                 {selectedChallenge.solved ? (
-                                    <div className="text-green-600 font-bold text-2xl flex items-center gap-4">
+                                    <div className="text-black font-bold text-2xl flex items-center gap-4 uppercase font-pixel tracking-tighter">
                                         <span>★ FLAG CAPTURED</span>
                                     </div>
                                 ) : (

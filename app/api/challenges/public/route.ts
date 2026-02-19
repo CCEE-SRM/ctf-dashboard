@@ -25,7 +25,7 @@ export async function GET() {
                     id: true,
                     title: true,
                     description: true,
-                    theme: true,
+                    theme: { select: { name: true } },
                     fileType: true,
                     link: true,
                     thumbnail: true,
@@ -53,6 +53,7 @@ export async function GET() {
         // Map challenges for public view (No solved status, masked hints)
         const publicChallengesList = problems.map((p: any) => ({
             ...p,
+            theme: p.theme?.name || 'Misc',
             points: dynamicScoring ? p.points : (p.initialPoints || p.points),
             solved: false,
             hints: (p.hints || []).map((h: any) => ({
