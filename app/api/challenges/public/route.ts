@@ -42,7 +42,10 @@ export async function GET() {
                         select: { name: true }
                     }
                 },
-                orderBy: { createdAt: 'desc' }
+                orderBy: [
+                    { theme: { order: 'asc' } },
+                    { createdAt: 'desc' }
+                ]
             });
             await redis.set('challenges:list', JSON.stringify(problems));
         }

@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 export const GET = staffOnly(async () => {
     try {
         const themes = await prisma.theme.findMany({
-            orderBy: { name: 'asc' }
+            orderBy: { order: 'asc' }
         });
         return NextResponse.json(themes);
     } catch (error) {
@@ -24,8 +24,16 @@ export const POST = staffOnly(async (req: AuthenticatedRequest) => {
             return NextResponse.json({ error: 'Missing required field: name' }, { status: 400 });
         }
 
+        const lastTheme = await prisma.theme.findFirst({
+            orderBy: { order: 'desc' }
+        });
+        const nextOrder = lastTheme ? lastTheme.order + 1 : 0;
+
         const theme = await prisma.theme.create({
-            data: { name }
+            data: {
+                name,
+                order: nextOrder
+            }
         });
 
         return NextResponse.json({ message: 'Theme created successfully', theme }, { status: 201 });

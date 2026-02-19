@@ -17,6 +17,7 @@ export default function AdminThemesPage() {
     const [newThemeName, setNewThemeName] = useState("");
     const [loadingData, setLoadingData] = useState(true);
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [reordering, setReordering] = useState(false);
     const [message, setMessage] = useState("");
 
     useEffect(() => {
@@ -72,6 +73,42 @@ export default function AdminThemesPage() {
         } catch {
             setStatus("error");
             setMessage("Network error.");
+        }
+    };
+
+    const moveTheme = async (index: number, direction: 'up' | 'down') => {
+        const newThemes = [...themes];
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+        if (targetIndex < 0 || targetIndex >= newThemes.length) return;
+
+        // Swap
+        const temp = newThemes[index];
+        newThemes[index] = newThemes[targetIndex];
+        newThemes[targetIndex] = temp;
+
+        setThemes(newThemes);
+        setReordering(true);
+
+        try {
+            const res = await fetch("/api/admin/themes/reorder", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ themeIds: newThemes.map(t => t.id) })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                setMessage(data.error || "Failed to save new order.");
+            }
+        } catch (error) {
+            console.error("Reorder error:", error);
+            setMessage("Network error while reordering.");
+        } finally {
+            setReordering(false);
         }
     };
 
@@ -139,13 +176,34 @@ export default function AdminThemesPage() {
                                 <thead className="bg-black text-white">
                                     <tr>
                                         <th className="p-4 font-pixel text-xl uppercase border-b-2 border-black">Theme Name</th>
+                                        <th className="p-4 font-pixel text-xl uppercase border-b-2 border-black">Order</th>
                                         <th className="p-4 font-pixel text-xl uppercase border-b-2 border-black">Identifier</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {themes.map(theme => (
+                                    {themes.map((theme, index) => (
                                         <tr key={theme.id} className="border-b-2 border-black hover:bg-yellow-50 transition-colors">
                                             <td className="p-4 font-bold text-lg">{theme.name}</td>
+                                            <td className="p-4">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => moveTheme(index, 'up')}
+                                                        disabled={index === 0 || reordering}
+                                                        className="bg-white border-2 border-black px-2 py-1 hover:bg-black hover:text-white disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-black transition-all font-bold"
+                                                        title="Move Up"
+                                                    >
+                                                        ↑
+                                                    </button>
+                                                    <button
+                                                        onClick={() => moveTheme(index, 'down')}
+                                                        disabled={index === themes.length - 1 || reordering}
+                                                        className="bg-white border-2 border-black px-2 py-1 hover:bg-black hover:text-white disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-black transition-all font-bold"
+                                                        title="Move Down"
+                                                    >
+                                                        ↓
+                                                    </button>
+                                                </div>
+                                            </td>
                                             <td className="p-4 font-mono-retro text-sm text-zinc-500">{theme.id}</td>
                                         </tr>
                                     ))}

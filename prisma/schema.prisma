@@ -145,5 +145,6 @@ model Announcement {
 model Theme {
   id         String      @id @default(uuid())
   name       String      @unique
+  order      Int         @default(0)
   challenges Challenge[]
 }

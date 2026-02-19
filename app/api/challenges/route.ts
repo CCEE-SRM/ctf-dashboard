@@ -65,9 +65,10 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                         }
                     }
                 },
-                orderBy: {
-                    createdAt: 'desc'
-                }
+                orderBy: [
+                    { theme: { order: 'asc' } },
+                    { createdAt: 'desc' }
+                ]
             });
             await redis.set('challenges:list', JSON.stringify(problems));
         }
