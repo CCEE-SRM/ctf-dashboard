@@ -16,6 +16,8 @@ export default function CreateChallengePage() {
         link: "",
         thumbnail: "",
         points: 100,
+        initialPoints: 100,
+        syncPoints: true,
         flag: "",
         fileType: "CHALLENGE" as "CHALLENGE" | "DOWNLOAD" | "RESOURCE",
         hints: [] as { content: string; cost: number }[]
@@ -26,7 +28,20 @@ export default function CreateChallengePage() {
     const [message, setMessage] = useState("");
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const { name, value, type } = e.target;
+        const isCheckbox = type === 'checkbox';
+        const finalValue = isCheckbox ? (e.target as HTMLInputElement).checked : value;
+
+        setForm(prev => {
+            const newState = { ...prev, [name]: finalValue };
+
+            // Sync Logic: If changing initialPoints and sync is ON, update current points too
+            if (name === 'initialPoints' && prev.syncPoints) {
+                newState.points = Number(value);
+            }
+
+            return newState;
+        });
     };
 
     const [loadingThemes, setLoadingThemes] = useState(true);
@@ -148,7 +163,19 @@ export default function CreateChallengePage() {
                         </div>
 
                         <div>
-                            <label className="block text-lg font-bold font-pixel uppercase mb-2">Points</label>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-lg font-bold font-pixel uppercase">Current Points</label>
+                                <div className="flex items-center gap-2 bg-zinc-100 px-2 py-1 border border-black text-[10px] font-bold">
+                                    <input
+                                        type="checkbox"
+                                        name="syncPoints"
+                                        checked={form.syncPoints}
+                                        onChange={handleChange as any}
+                                        className="w-3 h-3 border-black rounded-none cursor-pointer"
+                                    />
+                                    <span className="font-pixel uppercase">Sync with Initial</span>
+                                </div>
+                            </div>
                             <input
                                 type="number"
                                 name="points"
@@ -158,6 +185,21 @@ export default function CreateChallengePage() {
                                 value={form.points}
                                 onChange={handleChange}
                             />
+                            <p className="text-[10px] text-zinc-500 mt-1 font-mono uppercase italic">Decayed/Live Points</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-lg font-bold font-pixel uppercase mb-2">Initial Points</label>
+                            <input
+                                type="number"
+                                name="initialPoints"
+                                required
+                                min={0}
+                                className="w-full bg-zinc-50 border-2 border-black p-3 font-mono-retro focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                                value={form.initialPoints}
+                                onChange={handleChange}
+                            />
+                            <p className="text-[10px] text-zinc-500 mt-1 font-mono uppercase italic">Base/Max Points</p>
                         </div>
                     </div>
 

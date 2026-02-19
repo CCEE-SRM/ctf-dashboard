@@ -39,7 +39,7 @@ export const PUT = staffOnly(async (req: AuthenticatedRequest, { params }: { par
                     themeId,
                     link,
                     points: points !== undefined ? Number(points) : undefined,
-                    initialPoints: initialPoints !== undefined ? Number(initialPoints) : undefined,
+                    initialPoints: initialPoints !== undefined ? Number(initialPoints) : (points !== undefined ? Number(points) : undefined),
                     flag,
                     visible: visible !== undefined ? Boolean(visible) : undefined,
                     thumbnail,
