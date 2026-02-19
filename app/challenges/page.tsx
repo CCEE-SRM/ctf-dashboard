@@ -28,7 +28,7 @@ interface Challenge {
 }
 
 export default function ChallengesPage() {
-    const { token, loading: authLoading } = useAuth();
+    const { token, dbUser, loading: authLoading } = useAuth();
     const router = useRouter();
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [loading, setLoading] = useState(true);
@@ -418,8 +418,8 @@ export default function ChallengesPage() {
                                         <div className="flex gap-4">
                                             <input
                                                 type="text"
-                                                disabled={eventState !== 'START' || !token}
-                                                placeholder={!token ? "LOGIN TO SUBMIT" : eventState === 'START' ? "Flag{...}" : "LOCKED"}
+                                                disabled={eventState !== 'START' || !token || !dbUser?.teamId}
+                                                placeholder={!token ? "LOGIN TO SUBMIT" : !dbUser?.teamId ? "JOIN A TEAM" : eventState === 'START' ? "Flag{...}" : "LOCKED"}
                                                 className="flex-1 bg-white border-2 border-black p-4 font-mono text-lg outline-none focus:shadow-[4px_4px_0px_0px_#ccff00] disabled:bg-zinc-200 disabled:text-zinc-500 disabled:cursor-not-allowed"
                                                 value={flagInput}
                                                 onChange={(e) => setFlagInput(e.target.value)}
@@ -427,7 +427,7 @@ export default function ChallengesPage() {
                                             />
                                             <button
                                                 onClick={() => token ? handleSubmit() : router.push('/')}
-                                                disabled={!!(token && (submitting === selectedChallenge.id || eventState !== 'START' || !!cooldownUntil))}
+                                                disabled={!!(token && (submitting === selectedChallenge.id || eventState !== 'START' || !!cooldownUntil || !dbUser?.teamId))}
                                                 className={`px-8 py-4 font-bold transition-colors border-2 disabled:cursor-not-allowed
                                             ${!token
                                                         ? 'bg-purple-600 text-white border-black hover:bg-purple-700'
@@ -435,7 +435,9 @@ export default function ChallengesPage() {
                                                             ? 'bg-zinc-200 text-zinc-500 border-zinc-300'
                                                             : cooldownUntil
                                                                 ? 'bg-red-200 text-red-800 border-red-800'
-                                                                : 'bg-black text-white hover:bg-retro-green hover:text-black hover:border-black'
+                                                                : !dbUser?.teamId
+                                                                    ? 'bg-zinc-200 text-zinc-500 border-zinc-300'
+                                                                    : 'bg-black text-white hover:bg-retro-green hover:text-black hover:border-black'
                                                     }`}
                                             >
                                                 {!token
@@ -444,9 +446,16 @@ export default function ChallengesPage() {
                                                         ? "..."
                                                         : cooldownUntil
                                                             ? `WAIT ${cooldownRemaining}s`
-                                                            : "SUBMIT"}
+                                                            : !dbUser?.teamId
+                                                                ? "NO TEAM"
+                                                                : "SUBMIT"}
                                             </button>
                                         </div>
+                                        {!dbUser?.teamId && token && (
+                                            <div className="mt-2 text-red-600 font-bold bg-red-50 border border-red-200 p-2 text-sm uppercase">
+                                                {'>'} MUST JOIN OR CREATE A TEAM TO SUBMIT FLAGS
+                                            </div>
+                                        )}
                                         {response && (
                                             <div className={`mt-2 font-bold ${response.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
                                                 {'>'} {response.message}

@@ -15,13 +15,17 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
             return NextResponse.json({ error: 'Missing challengeId or flag' }, { status: 400 });
         }
 
-        // Fetch User to get Team ID
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: { teamId: true }
         });
 
         const teamId = user?.teamId;
+
+        // Enforce Team Membership
+        if (!teamId) {
+            return NextResponse.json({ error: 'You must be in a team to submit flags.' }, { status: 403 });
+        }
 
         // --- Rate Limiting Logic ---
         const config = await getConfig();
