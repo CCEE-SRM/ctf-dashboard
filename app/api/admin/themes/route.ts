@@ -30,7 +30,10 @@ export const POST = staffOnly(async (req: AuthenticatedRequest) => {
 
         return NextResponse.json({ message: 'Theme created successfully', theme }, { status: 201 });
 
-    } catch (error) {
+    } catch (error: any) {
+        if (error.code === 'P2002') {
+            return NextResponse.json({ error: 'Theme already exists' }, { status: 409 });
+        }
         console.error('Create theme error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
