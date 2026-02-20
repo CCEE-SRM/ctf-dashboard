@@ -49,12 +49,38 @@ export const PUT = staffOnly(async (req: AuthenticatedRequest, { params }: { par
 
             // Handle Hints if provided
             if (body.hints) {
-                // Delete existing options
+                // 1. Find all existing purchases for hints of this challenge to refund
+                const purchases = await tx.hintPurchase.findMany({
+                    where: { hint: { challengeId } }
+                });
+
+                // 2. Refund points to Teams and Leaderboard
+                for (const purchase of purchases) {
+                    if (purchase.teamId) {
+                        await tx.team.update({
+                            where: { id: purchase.teamId },
+                            data: { points: { increment: purchase.costAtPurchase } }
+                        });
+
+                        // Update leaderboard points if entry exists
+                        await tx.leaderboard.updateMany({
+                            where: { teamId: purchase.teamId },
+                            data: { points: { increment: purchase.costAtPurchase } }
+                        });
+                    }
+                }
+
+                // 3. Delete existing purchases (fixes P2003)
+                await tx.hintPurchase.deleteMany({
+                    where: { hint: { challengeId } }
+                });
+
+                // 4. Delete existing hints
                 await tx.hint.deleteMany({
                     where: { challengeId }
                 });
 
-                // Create new ones
+                // 5. Create new ones
                 if (body.hints.length > 0) {
                     await tx.hint.createMany({
                         data: body.hints.map((h: any) => ({
@@ -101,19 +127,36 @@ export const DELETE = staffOnly(async (req: AuthenticatedRequest, { params }: { 
             return NextResponse.json({ error: 'Forbidden: You can only delete your own challenges' }, { status: 403 });
         }
 
-        // Transaction to delete related submissions? 
-        // Or just let cascade delete handle it if configured?
-        // Prisma schema doesn't show onDelete cascade for submissions relation, so we should probably delete submissions first or rely on database constraints.
-        // Let's assume we delete the challenge. If providing a foreign key constraint error, we'll need to handle it.
-        // But for now, let's try direct deletion.
+        // 1. Transaction to cleanup everything safely
+        await prisma.$transaction(async (tx) => {
+            // A. Refund Hint Purchases
+            const purchases = await tx.hintPurchase.findMany({
+                where: { hint: { challengeId } }
+            });
 
-        // Actually, best practice to delete submissions first manually if not cascade
-        await prisma.submission.deleteMany({
-            where: { challengeId }
-        });
+            for (const purchase of purchases) {
+                if (purchase.teamId) {
+                    await tx.team.update({
+                        where: { id: purchase.teamId },
+                        data: { points: { increment: purchase.costAtPurchase } }
+                    });
 
-        await prisma.challenge.delete({
-            where: { id: challengeId }
+                    await tx.leaderboard.updateMany({
+                        where: { teamId: purchase.teamId },
+                        data: { points: { increment: purchase.costAtPurchase } }
+                    });
+                }
+            }
+
+            // B. Delete related data
+            await tx.submission.deleteMany({ where: { challengeId } });
+            await tx.hintPurchase.deleteMany({ where: { hint: { challengeId } } });
+            await tx.hint.deleteMany({ where: { challengeId } });
+
+            // C. Delete the challenge itself
+            await tx.challenge.delete({
+                where: { id: challengeId }
+            });
         });
 
         // Invalidate Cache
