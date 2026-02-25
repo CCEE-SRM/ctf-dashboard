@@ -6,4 +6,8 @@ const formattedUrl = redisUrl.includes('://') ? redisUrl : `redis://${redisUrl}`
 
 const redis = new Redis(formattedUrl);
 
+redis.on('error', (err) => {
+    console.error('[Redis Global Error]:', err);
+});
+
 export { redis };

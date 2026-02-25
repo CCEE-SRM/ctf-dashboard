@@ -46,8 +46,10 @@ const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088FE', '#00C49F'
 
 import RetroLayout from "@/components/RetroLayout";
 import { useTriggerStream } from "@/hooks/useTriggerStream";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LeaderboardPage() {
+    const { token, loading: authLoading } = useAuth();
     const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
     const [visibleTeamIds, setVisibleTeamIds] = useState<string[]>([]);
@@ -58,7 +60,6 @@ export default function LeaderboardPage() {
     // Initial fetch
     const fetchLeaderboard = async () => {
         try {
-            const { token } = JSON.parse(localStorage.getItem('auth_user') || '{}');
             const endpoint = token ? "/api/leaderboard" : "/api/leaderboard/public";
             const headers: Record<string, string> = {};
             if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -85,8 +86,10 @@ export default function LeaderboardPage() {
     };
 
     useEffect(() => {
-        fetchLeaderboard();
-    }, []);
+        if (!authLoading) {
+            fetchLeaderboard();
+        }
+    }, [token, authLoading]);
 
     // Real-time updates
     useTriggerStream((data) => {

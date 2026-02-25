@@ -13,6 +13,10 @@ export async function GET(req: NextRequest) {
             const formattedUrl = redisUrl.includes('://') ? redisUrl : `redis://${redisUrl}`;
             const subscriber = new Redis(formattedUrl);
 
+            subscriber.on('error', (err) => {
+                console.error('[SSE Redis Error]:', err);
+            });
+
             const channel = 'ctf-triggers';
             let isClosed = false;
 
