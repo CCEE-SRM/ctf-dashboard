@@ -82,12 +82,12 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
 
             <div className="flex flex-col flex-1 overflow-hidden min-w-0">
                 {/* 0. TOP HUD (Retro Header) */}
-                <div className="h-24 border-b-2 border-retro-border bg-zinc-100 flex items-center justify-between px-6 shrink-0 relative z-20">
+                <div className="h-20 border-b-2 border-retro-border bg-zinc-100 flex items-center justify-between px-6 shrink-0 relative z-20">
                     <div className="absolute inset-0 bg-[url('/grid.png')] opacity-5 pointer-events-none"></div>
 
                     {/* Left: Icon & HUD Status */}
                     <div className="flex items-center gap-6 relative z-10">
-                        <div className="w-12 h-12 relative flex items-center justify-center">
+                        <div className="w-10 h-10 relative flex items-center justify-center">
                             <Image
                                 src="/logo.png"
                                 alt="CTF Logo"
@@ -96,7 +96,7 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
                                 priority
                             />
                         </div>
-                        <div className="h-12 w-[2px] bg-zinc-300"></div>
+                        <div className="h-10 w-[2px] bg-zinc-300"></div>
                         <div className="flex flex-col gap-1">
                             {token && stats.topTeam && (
                                 <div className="font-pixel text-[10px] text-zinc-500 uppercase tracking-tight flex items-center gap-1">
@@ -145,9 +145,9 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
 
                 <div className="flex flex-1 overflow-hidden relative">
                     {/* 1. LEFT SIDEBAR: Vertical Text */}
-                    <div className="hidden md:flex w-40 border-r-2 border-retro-border bg-zinc-100 items-center justify-center relative shadow-inner">
+                    <div className="hidden md:flex w-24 lg:w-32 border-r-2 border-retro-border bg-zinc-100 items-center justify-center relative shadow-inner overflow-hidden">
                         <div className="bg-[url('/grid.png')] opacity-10 absolute inset-0"></div>
-                        <div className="-rotate-90 whitespace-nowrap text-6xl font-pixel tracking-widest text-shadow-retro select-none">
+                        <div className="-rotate-90 whitespace-nowrap text-3xl lg:text-5xl font-pixel tracking-widest text-shadow-retro select-none uppercase">
                             {title}
                         </div>
                     </div>
@@ -159,25 +159,26 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
             </div>
 
             {/* 3. RIGHT SIDEBAR */}
-            <div className="hidden xl:flex w-32 border-l-2 border-retro-border bg-zinc-100 flex-col py-8 justify-between items-center text-zinc-400 hover:text-black transition-colors relative z-30">
+            <div className="hidden xl:flex w-28 border-l-2 border-retro-border bg-zinc-100 flex-col py-8 justify-between items-center text-zinc-400 hover:text-black transition-colors relative z-30">
                 <div className="bg-[url('/grid.png')] opacity-10 absolute inset-0 pointer-events-none"></div>
 
                 {activePage !== 'challenges' && (
-                    <Link href="/challenges" className="writing-vertical-rl rotate-180 text-3xl font-pixel hover:text-retro-green cursor-pointer p-6 whitespace-nowrap relative z-10">
+                    <Link href="/challenges" className="writing-vertical-rl rotate-180 text-xl lg:text-2xl font-pixel hover:text-retro-green cursor-pointer p-6 whitespace-nowrap relative z-10 transition-all uppercase">
                         Challenges
                     </Link>
                 )}
                 {activePage === 'challenges' && (
-                    <Link href="/leaderboard" className="writing-vertical-rl rotate-180 text-3xl font-pixel hover:text-retro-green cursor-pointer p-6 whitespace-nowrap relative z-10">
+                    <Link href="/leaderboard" className="writing-vertical-rl rotate-180 text-xl lg:text-2xl font-pixel hover:text-retro-green cursor-pointer p-6 whitespace-nowrap relative z-10 transition-all uppercase">
                         Scoreboard
                     </Link>
                 )}
 
-                <div className="h-24 w-[2px] bg-zinc-300"></div>
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                    <div className="h-24 w-[2px] bg-zinc-300"></div>
+                    <div className="h-24 w-[2px] bg-zinc-300"></div>
+                </div>
 
-                <div className="h-24 w-[2px] bg-zinc-300"></div>
-
-                <Link href="/profile" className={`writing-vertical-rl rotate-180 text-3xl font-pixel cursor-pointer p-6 whitespace-nowrap relative z-10 ${activePage === 'profile' ? 'text-black' : 'hover:text-retro-green'}`}>
+                <Link href="/profile" className={`writing-vertical-rl rotate-180 text-xl lg:text-2xl font-pixel cursor-pointer p-6 whitespace-nowrap relative z-10 transition-all uppercase ${activePage === 'profile' ? 'text-black' : 'hover:text-retro-green'}`}>
                     My Team
                 </Link>
             </div>

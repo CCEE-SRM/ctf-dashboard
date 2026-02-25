@@ -267,7 +267,7 @@ export default function ChallengesPage() {
         <RetroLayout title="Challenges" activePage="challenges">
             <div className="flex flex-1 overflow-hidden relative border-t-2 md:border-t-0 border-retro-border">
                 {/* 2. CATEGORIES COLUMN */}
-                <div className="w-80 border-r-2 border-retro-border bg-white flex flex-col overflow-y-auto">
+                <div className="w-64 lg:w-80 shrink-0 border-r-2 border-retro-border bg-white flex flex-col overflow-y-auto">
                     {categories.map(cat => (
                         <button
                             key={cat}
@@ -277,7 +277,7 @@ export default function ChallengesPage() {
                                 : "hover:bg-zinc-50"
                                 }`}
                         >
-                            <span className={`text-4xl font-pixel block break-words leading-tight ${selectedCategory === cat ? 'animate-pulse' : ''}`}>
+                            <span className={`text-2xl lg:text-4xl font-pixel block break-words leading-tight ${selectedCategory === cat ? 'animate-pulse' : ''}`}>
                                 {cat}
                             </span>
                             <div className="text-xs font-mono mt-1 text-zinc-500 group-hover:text-black">
@@ -296,7 +296,7 @@ export default function ChallengesPage() {
                 </div>
 
                 {/* 3. CHALLENGE LIST COLUMN */}
-                <div className="w-72 border-r-2 border-retro-border bg-zinc-50 flex flex-col overflow-y-auto">
+                <div className="w-56 lg:w-72 shrink-0 border-r-2 border-retro-border bg-zinc-50 flex flex-col overflow-y-auto">
                     {filteredChallenges.map(challenge => (
                         <button
                             key={challenge.id}
@@ -323,20 +323,20 @@ export default function ChallengesPage() {
                 </div>
 
                 {/* 4. DETAILS PANE (Main) */}
-                <div className="flex-1 bg-white relative flex flex-col overflow-y-auto">
+                <div className="flex-1 bg-white relative flex flex-col overflow-y-auto h-full scrollbar-retro">
                     {/* Retro Grid Background */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
                     {selectedChallenge ? (
-                        <div className="relative z-10 p-12 max-w-4xl">
+                        <div className="relative z-10 p-4 md:p-8 lg:p-12 max-w-4xl mx-auto w-full">
                             {/* Header */}
-                            <div className="flex items-start justify-between mb-12 border-b-2 border-black pb-4 border-dashed">
-                                <h1 className="text-6xl font-pixel font-normal text-black leading-tight break-words max-w-2xl">
+                            <div className="flex flex-col md:flex-row items-start justify-between mb-8 md:mb-12 border-b-2 border-black pb-4 border-dashed gap-4">
+                                <h1 className="text-3xl md:text-5xl lg:text-6xl font-pixel font-normal text-black leading-tight break-words flex-1">
                                     {selectedChallenge.title}
                                 </h1>
-                                <div className="border-2 border-black p-4 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative">
-                                    <div className="absolute -top-3 -left-3 bg-white px-1 text-xs font-bold border border-black">POINTS</div>
-                                    <span className="text-4xl font-mono-retro font-bold">{selectedChallenge.points}pt</span>
+                                <div className="border-2 border-black p-3 md:p-4 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative shrink-0">
+                                    <div className="absolute -top-3 -left-3 bg-white px-1 text-[10px] font-bold border border-black">POINTS</div>
+                                    <span className="text-2xl md:text-4xl font-mono-retro font-bold">{selectedChallenge.points}pt</span>
                                     {/* Bracket corners */}
                                     <div className="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-black"></div>
                                     <div className="absolute -top-1 -right-1 w-2 h-2 border-t-2 border-r-2 border-black"></div>
@@ -346,10 +346,10 @@ export default function ChallengesPage() {
                             </div>
 
                             {/* Question Mark / Icon */}
-                            <div className="mb-8 text-8xl opacity-10 font-pixel select-none absolute top-40 right-12 z-0">?</div>
+                            <div className="hidden lg:block mb-8 text-8xl opacity-10 font-pixel select-none absolute top-40 right-12 z-0">?</div>
 
                             {/* Description */}
-                            <div className="prose prose-p:font-mono-retro prose-headings:font-pixel font-normal max-w-none text-xl mb-8 relative z-10 bg-white/80 p-4 border border-zinc-100 backdrop-blur-sm rounded">
+                            <div className="prose prose-p:font-mono-retro prose-headings:font-pixel font-normal max-w-none text-base md:text-lg lg:text-xl mb-8 relative z-10 bg-white/80 p-4 border border-zinc-100 backdrop-blur-sm rounded">
                                 <ReactMarkdown
                                     components={{
                                         p: ({ node, ...props }) => <p className="whitespace-pre-wrap mb-4" {...props} />

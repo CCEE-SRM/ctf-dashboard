@@ -136,16 +136,16 @@ export default function LeaderboardPage() {
 
     return (
         <RetroLayout title="Scoreboard" activePage="leaderboard">
-            <div className="flex-1 h-full overflow-hidden p-4 md:p-8 relative">
-                <div className="max-w-7xl mx-auto h-full flex flex-col md:flex-row gap-6">
+            <div className="flex-1 h-full overflow-hidden p-3 md:p-6 lg:p-8 relative">
+                <div className="max-w-7xl mx-auto h-full flex flex-col xl:flex-row gap-6">
 
                     {/* LEFT COLUMN: Leaderboard Table */}
                     <div className="flex-1 flex flex-col min-h-0 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                         {/* Table Header */}
-                        <div className="grid grid-cols-12 gap-0 border-b-2 border-black bg-zinc-100 font-pixel text-xs md:text-sm sticky top-0 z-10 shrink-0">
-                            <div className="col-span-2 p-3 border-r-2 border-black text-center">PLACE</div>
-                            <div className="col-span-6 p-3 border-r-2 border-black">NAME</div>
-                            <div className="col-span-2 p-3 border-r-2 border-black text-center">FLAGS</div>
+                        <div className="grid grid-cols-12 gap-0 border-b-2 border-black bg-zinc-100 font-pixel text-[10px] md:text-xs lg:text-sm sticky top-0 z-10 shrink-0 uppercase">
+                            <div className="col-span-2 p-3 border-r-2 border-black text-center">RANK</div>
+                            <div className="col-span-6 p-3 border-r-2 border-black">HANDLE</div>
+                            <div className="col-span-2 p-3 border-r-2 border-black text-center">SOLVES</div>
                             <div className="col-span-2 p-3 text-right">SCORE</div>
                         </div>
 
@@ -225,7 +225,7 @@ export default function LeaderboardPage() {
                     </div>
 
                     {/* RIGHT COLUMN: Graph & Stats */}
-                    <div className="flex-1 flex flex-col gap-6 min-h-0">
+                    <div className="flex-1 flex flex-col gap-6 min-h-0 min-w-0">
 
                         {/* 1. Score Graph */}
                         <div className="bg-white border-2 border-black p-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-1 min-h-[300px] flex flex-col">
@@ -283,9 +283,9 @@ export default function LeaderboardPage() {
                         </div>
 
                         {/* 2. Categories Solved */}
-                        <div className="bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] shrink-0 h-[200px] overflow-y-auto">
-                            <h2 className="font-pixel text-lg mb-4 border-b-2 border-dashed border-zinc-300 pb-2">CATEGORIES_SOLVED</h2>
-                            <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] shrink-0 min-h-[150px] lg:h-[200px] overflow-y-auto">
+                            <h2 className="font-pixel text-base lg:text-lg mb-4 border-b-2 border-dashed border-zinc-300 pb-2">CATEGORIES_SOLVED</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                                 {categoryData.length > 0 ? categoryData.map((cat) => (
                                     <div key={cat.name} className="flex items-center gap-2">
                                         <div className="w-2 h-2 bg-retro-green animate-pulse"></div>
