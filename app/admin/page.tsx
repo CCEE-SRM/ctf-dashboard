@@ -204,7 +204,7 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="w-full xl:w-auto">
-                        <nav className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <nav className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                             <Link href="/admin/challenges" className="stats-link group">
                                 <span className="stats-link-icon">⚔️</span>
                                 <span className="stats-link-text">Challenges</span>
@@ -222,9 +222,15 @@ export default function AdminDashboardPage() {
                                 </Link>
                             )}
                             {dbUser.role === 'ADMIN' && (
-                                <Link href="/admin/seed" className="stats-link group text-zinc-400 opacity-50 hover:opacity-100">
+                                <Link href="/admin/seed" className="stats-link group">
                                     <span className="stats-link-icon">💾</span>
-                                    <span className="stats-link-text">System</span>
+                                    <span className="stats-link-text">Seeder</span>
+                                </Link>
+                            )}
+                            {dbUser.role === 'ADMIN' && (
+                                <Link href="/admin/maintenance" className="stats-link group bg-red-50 hover:bg-red-100 border-red-600 shadow-[4px_4px_0px_0px_rgba(220,38,38,1)]">
+                                    <span className="stats-link-icon">⚙️</span>
+                                    <span className="stats-link-text text-red-600">Maintenance</span>
                                 </Link>
                             )}
                         </nav>
