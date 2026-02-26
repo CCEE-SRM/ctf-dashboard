@@ -70,37 +70,8 @@ export default function Home() {
           <span className="font-pixel text-sm text-zinc-400">{'>'} -</span>
           <span className="font-pixel text-sm text-zinc-400 animate-pulse">{'>'} INITIALIZING SEQUENCE...</span>
         </div>
-
-        <div className="text-right hidden md:block">
-          <div className="flex justify-end gap-8 font-pixel text-sm text-zinc-500 mb-2">
-            <span>+</span>
-            <span>+</span>
-          </div>
-          <div className="font-mono text-zinc-500 text-sm">
-            MODE
-          </div>
-          <div className="font-mono text-xl">
-                        // :ACTIVE
-          </div>
-          <div className="font-mono text-zinc-500 mt-1">
-            {dateTime}
-          </div>
-        </div>
       </div>
 
-      {/* Right Menu */}
-      <div className="absolute top-32 right-8 hidden md:block text-right z-10">
-        {/* Decorative corners */}
-        <div className="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-zinc-300"></div>
-        <div className="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-zinc-300"></div>
-
-        <div className="space-y-1 font-bold text-lg">
-          <div className="cursor-pointer hover:bg-black hover:text-white px-2">Rules</div>
-          <div className="cursor-pointer hover:bg-black hover:text-white px-2">FAQ</div>
-          <div className="cursor-pointer hover:bg-black hover:text-white px-2">Hackceler8</div>
-          <div className="cursor-pointer hover:bg-black hover:text-white px-2">BeginnersQuest</div>
-        </div>
-      </div>
 
       {/* Main Center Content */}
       <div className="relative min-h-screen flex flex-col items-center justify-center z-20">
