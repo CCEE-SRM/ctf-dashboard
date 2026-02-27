@@ -165,10 +165,10 @@ export default function Home() {
                 </div>
 
                 <div className="text-xs text-zinc-500 space-y-2">
-                  <p>By creating a team you agree to follow the <a href="#" className="underline text-blue-600">rules of the Google CTF</a>.</p>
+                  <p>By creating a team you agree to follow the <a href="https://www.texus.io/event/2530" className="underline text-blue-600">rules of the TEXUS CTF</a>.</p>
                   <label className="flex items-center gap-2 cursor-pointer mt-4">
                     <input type="checkbox" className="w-4 h-4 border-2 border-black rounded-none" />
-                    <span>I'm over 18 years old.</span>
+                    <span>i won't be of any trouble</span>
                   </label>
                 </div>
 
@@ -215,7 +215,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-xs text-zinc-500">
-                  <p>By joining a team you agree to follow the <a href="#" className="underline text-blue-600">rules of the Google CTF</a>.</p>
+                  <p>By joining a team you agree to follow the <a href="#" className="underline text-blue-600">rules of the TEXUS CTF</a>.</p>
                 </div>
 
                 <div className="pt-8 flex justify-between items-center">
