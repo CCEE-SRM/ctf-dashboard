@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 import { getConfig } from '@/lib/config';
 
@@ -13,13 +12,7 @@ export async function GET() {
             return NextResponse.json({ error: 'Public access to challenges is disabled.' }, { status: 403 });
         }
 
-        const cachedChallenges = await redis.get('challenges:list');
-        let problems;
-
-        if (cachedChallenges) {
-            problems = JSON.parse(cachedChallenges);
-        } else {
-            problems = await prisma.challenge.findMany({
+        const problems = await prisma.challenge.findMany({
                 where: { visible: true },
                 select: {
                     id: true,
@@ -47,8 +40,6 @@ export async function GET() {
                     { createdAt: 'desc' }
                 ]
             });
-            await redis.set('challenges:list', JSON.stringify(problems));
-        }
 
         // Map challenges for public view (No solved status, masked hints)
         const publicChallengesList = problems.map((p: any) => ({

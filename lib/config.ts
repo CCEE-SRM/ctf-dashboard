@@ -1,5 +1,4 @@
 // lib/config.ts
-import { redis } from './redis';
 
 export interface AppConfig {
     dynamicScoring: boolean;
@@ -25,8 +24,6 @@ const DEFAULT_CONFIG: AppConfig = {
     publicLeaderboard: true
 };
 
-const REDIS_CONFIG_KEY = 'config:app';
-
 export async function getConfig(): Promise<AppConfig> {
     // 1. Get base config from Environment Variables (Static defaults)
     const dynamicScoring = process.env.DYNAMIC_SCORING === 'true' || DEFAULT_CONFIG.dynamicScoring;
@@ -47,28 +44,6 @@ export async function getConfig(): Promise<AppConfig> {
         publicChallenges: process.env.PUBLIC_CHALLENGES === 'false' ? false : (process.env.PUBLIC_CHALLENGES === 'true' ? true : DEFAULT_CONFIG.publicChallenges),
         publicLeaderboard: process.env.PUBLIC_LEADERBOARD === 'false' ? false : (process.env.PUBLIC_LEADERBOARD === 'true' ? true : DEFAULT_CONFIG.publicLeaderboard),
     };
-
-    // 2. Try to fetch overrides from Redis
-    try {
-        const cached = await redis.get(REDIS_CONFIG_KEY);
-        if (cached) {
-            const overrides = JSON.parse(cached);
-            // Apply validation for eventState from Redis overrides
-            const overrideEventState = validStates.includes(overrides.eventState) ? overrides.eventState : baseConfig.eventState;
-
-            return {
-                ...baseConfig,
-                ...overrides,
-                eventState: overrideEventState, // Use validated override or base
-                rateLimit: {
-                    ...baseConfig.rateLimit,
-                    ...(overrides.rateLimit || {})
-                }
-            };
-        }
-    } catch (error) {
-        console.error('Failed to fetch config from Redis, using ENV defaults', error);
-    }
 
     return baseConfig;
 }
@@ -96,13 +71,11 @@ export async function updateConfig(newConfig: Partial<AppConfig>): Promise<AppCo
             }
         };
 
-        // Save to Redis
-        await redis.set(REDIS_CONFIG_KEY, JSON.stringify(updatedConfig));
-
-        console.log('[CONFIG] Application configuration updated in Redis');
+        // Note: config updates are in-memory only (no Redis persistence)
+        console.log('[CONFIG] Application configuration updated (in-memory)');
         return updatedConfig;
     } catch (error) {
-        console.error('Failed to update config in Redis', error);
+        console.error('Failed to update config', error);
         throw error;
     }
 }

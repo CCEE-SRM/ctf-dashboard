@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { staffOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -22,10 +21,6 @@ export const PUT = staffOnly(async (req: AuthenticatedRequest) => {
                 })
             )
         );
-
-        // Invalidate Cache
-        await redis.del('challenges:list');
-        console.log('[CACHE INVALIDATE] Deleting challenges:list (Themes Reordered)');
 
         return NextResponse.json({ message: 'Themes reordered successfully' });
 

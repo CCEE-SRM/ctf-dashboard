@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { staffOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -50,9 +49,6 @@ export const POST = staffOnly(async (req: AuthenticatedRequest) => {
                 }
             }
         });
-
-        await redis.del('challenges:list');
-        console.log('[CACHE INVALIDATE] Deleting challenges:list (New Challenge)');
 
         return NextResponse.json({ message: 'Challenge created successfully', challenge }, { status: 201 });
 

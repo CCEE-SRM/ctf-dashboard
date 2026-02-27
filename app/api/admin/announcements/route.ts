@@ -2,7 +2,6 @@
 import { adminOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 
 // POST /api/admin/announcements - Create an announcement (Admin only)
@@ -23,13 +22,6 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
             },
         });
 
-        // Invalidate Cache
-        await redis.del('announcements:list');
-        console.log('[CACHE INVALIDATE] Deleted announcements:list');
-
-        // Publish Real-time trigger
-        await redis.publish('ctf-triggers', JSON.stringify({ announcements: true, status: true }));
-        console.log('[SSE TRIGGER] Published announcements and status update');
 
         return NextResponse.json(announcement);
     } catch (error) {
@@ -53,13 +45,6 @@ export const DELETE = adminOnly(async (req: AuthenticatedRequest) => {
             where: { id },
         });
 
-        // Invalidate Cache
-        await redis.del('announcements:list');
-        console.log('[CACHE INVALIDATE] Deleted announcements:list');
-
-        // Publish Real-time trigger
-        await redis.publish('ctf-triggers', JSON.stringify({ announcements: true, status: true }));
-        console.log('[SSE TRIGGER] Published announcements and status delete');
 
         return NextResponse.json({ success: true });
     } catch (error) {

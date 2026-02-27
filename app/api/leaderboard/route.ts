@@ -1,18 +1,10 @@
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic'; // Ensure this isn't cached statically at build time
 
 export async function GET() {
     try {
-        const cachedLeaderboard = await redis.get('leaderboard:data');
-        if (cachedLeaderboard) {
-            console.log('[CACHE HIT] Leaderboard fetched from Redis');
-            return NextResponse.json(JSON.parse(cachedLeaderboard));
-        }
-
-        console.log('[CACHE MISS] Leaderboard fetching from DB');
         // Fetch ALL teams to ensure 0-point teams are visible
         const allTeams = await prisma.team.findMany({
             include: {
@@ -92,8 +84,6 @@ export async function GET() {
 
             return timeA - timeB;
         });
-
-        await redis.set('leaderboard:data', JSON.stringify(teams), 'EX', 5);
 
         return NextResponse.json(teams);
     } catch (error) {

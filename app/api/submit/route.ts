@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { redis } from '@/lib/redis';
 import { authenticated } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -26,52 +25,6 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
         if (!teamId) {
             return NextResponse.json({ error: 'You must be in a team to submit flags.' }, { status: 403 });
         }
-
-        // --- Rate Limiting Logic ---
-        const config = await getConfig();
-        const { maxAttempts, windowSeconds, cooldownSeconds } = config.rateLimit;
-
-        const rateLimitKey = `rate_limit:attempts:${userId}`;
-        const blockedKey = `rate_limit:blocked:${userId}`;
-
-        // 1. Check if user is currently blocked
-        const isBlocked = await redis.get(blockedKey);
-        if (isBlocked) {
-            const ttl = await redis.ttl(blockedKey);
-            return NextResponse.json({
-                error: `You are cooling down. Please wait ${ttl} seconds.`,
-                cooldownRemaining: ttl
-            }, { status: 429 });
-        }
-
-        // 2. Add current attempt timestamp
-        const now = Date.now();
-        await redis.rpush(rateLimitKey, now);
-
-        // 3. Keep only the last 'maxAttempts' timestamps
-        await redis.ltrim(rateLimitKey, -maxAttempts, -1);
-
-        // 4. Check if rate limit exceeded
-        const attempts = await redis.lrange(rateLimitKey, 0, -1);
-
-        if (attempts.length >= maxAttempts) {
-            const oldestAttempt = parseInt(attempts[0]);
-            const timeDiff = (now - oldestAttempt) / 1000; // seconds
-
-            if (timeDiff < windowSeconds) {
-                // Rate limit triggered! Block user.
-                await redis.set(blockedKey, 'blocked', 'EX', cooldownSeconds);
-                // Optional: Clear attempts so they start fresh after cooldown? 
-                // Alternatively, let them expire naturally. Clearing is often cleaner.
-                await redis.del(rateLimitKey);
-
-                return NextResponse.json({
-                    error: `Rate limit exceeded. Please wait ${cooldownSeconds} seconds.`,
-                    cooldownRemaining: cooldownSeconds
-                }, { status: 429 });
-            }
-        }
-        // ---------------------------
 
         // 1. Check if already solved by User OR Team
         const existingSubmission = await prisma.submission.findFirst({
@@ -235,21 +188,11 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
                     }
                 });
             }
-            // Invalidate Caches
-            console.log('[CACHE INVALIDATE] Deleting leaderboard:data');
-            await redis.del('leaderboard:data'); // Always update leaderboard
+            // Invalidate Leaderboard
+            console.log('[DB UPDATE] Leaderboard updated');
             if (pointDiff > 0) {
-                console.log('[CACHE INVALIDATE] Deleting challenges:list (Point Decay)');
-                await redis.del('challenges:list'); // Update challenge points if decayed
+                console.log('[DB UPDATE] Challenge points updated (Point Decay)');
             }
-
-            // Publish Real-time triggers
-            await redis.publish('ctf-triggers', JSON.stringify({
-                leaderboard: true,
-                challenges: true,
-                status: true
-            }));
-            console.log('[SSE TRIGGER] Published leaderboard, challenges, status update');
         });
 
         const finalChallenge = await prisma.challenge.findUnique({ where: { id: challengeId } });

@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 import { getConfig } from '@/lib/config';
 
@@ -11,13 +10,6 @@ export async function GET() {
 
         if (!publicLeaderboard) {
             return NextResponse.json({ error: 'Public access to leaderboard is disabled.' }, { status: 403 });
-        }
-
-        // Try cache first
-        const cacheKey = 'leaderboard:data';
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-            return NextResponse.json(JSON.parse(cached));
         }
 
         // Fetch ALL teams to ensure 0-point teams are visible
@@ -92,7 +84,6 @@ export async function GET() {
             return timeA - timeB;
         });
 
-        await redis.setex(cacheKey, 60, JSON.stringify(teams)); // Cache for 1 min
         return NextResponse.json(teams);
     } catch (error) {
         console.error('Public Leaderboard fetch error:', error);

@@ -1,6 +1,5 @@
 
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { staffOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -95,10 +94,6 @@ export const PUT = staffOnly(async (req: AuthenticatedRequest, { params }: { par
             return c;
         });
 
-        // Invalidate Cache
-        await redis.del('challenges:list');
-        console.log(`[CACHE INVALIDATE] Deleting challenges:list (Updated Challenge ${challengeId})`);
-
         return NextResponse.json({ message: 'Challenge updated successfully', challenge: updatedChallenge });
 
     } catch (error) {
@@ -158,10 +153,6 @@ export const DELETE = staffOnly(async (req: AuthenticatedRequest, { params }: { 
                 where: { id: challengeId }
             });
         });
-
-        // Invalidate Cache
-        await redis.del('challenges:list');
-        console.log(`[CACHE INVALIDATE] Deleting challenges:list (Deleted Challenge ${challengeId})`);
 
         return NextResponse.json({ message: 'Challenge deleted successfully' });
 

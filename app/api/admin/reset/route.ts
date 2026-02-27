@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 import { adminOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
@@ -43,24 +42,6 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
             });
             console.log('[RESET] Staff points reset');
         });
-
-        // 7. Clear Redis Caches
-        const keysToClear = [
-            'leaderboard:data',
-            'challenges:list',
-            'status:global'
-        ];
-        for (const key of keysToClear) {
-            await redis.del(key);
-        }
-        console.log('[RESET] Cache purged');
-
-        // Trigger real-time updates for any connected clients
-        await redis.publish('ctf-triggers', JSON.stringify({
-            leaderboard: true,
-            challenges: true,
-            status: true
-        }));
 
         return NextResponse.json({
             success: true,

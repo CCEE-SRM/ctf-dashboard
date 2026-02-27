@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import { authenticated } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -22,19 +21,7 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
         // Read Config
         const { dynamicScoring } = await getConfig();
 
-        // We can't easily cache the "view" if it depends on config without invalidating often.
-        // OR we fetch raw data and map it.
-        // Let's fetch raw data (cached) and then specific mapper.
-
-        const cachedChallenges = await redis.get('challenges:list');
-        let problems;
-
-        if (cachedChallenges) {
-            console.log('[CACHE HIT] Challenges fetched from Redis');
-            problems = JSON.parse(cachedChallenges);
-        } else {
-            console.log('[CACHE MISS] Challenges fetching from DB');
-            problems = await prisma.challenge.findMany({
+        const problems = await prisma.challenge.findMany({
                 where: {
                     visible: true
                 },
@@ -70,8 +57,6 @@ export const GET = authenticated(async (req: AuthenticatedRequest) => {
                     { createdAt: 'desc' }
                 ]
             });
-            await redis.set('challenges:list', JSON.stringify(problems));
-        }
 
         // Get submissions for this user OR team to mark as solved
         const submissions = await prisma.submission.findMany({
