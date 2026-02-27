@@ -40,6 +40,9 @@ export async function GET() {
                         }
                     },
                     orderBy: { createdAt: 'asc' }
+                },
+                hintPurchases: {
+                    select: { costAtPurchase: true }
                 }
             }
         });
@@ -59,10 +62,13 @@ export async function GET() {
                 };
             });
 
+            const spentOnHints = team.hintPurchases.reduce((sum: number, hp: any) => sum + hp.costAtPurchase, 0);
+            const calculatedPoints = cumulativeScore - spentOnHints;
+
             return {
                 id: team.id,
                 name: team.name,
-                points: team.points,
+                points: calculatedPoints,
                 leader: team.leader,
                 members: team.members,
                 history,

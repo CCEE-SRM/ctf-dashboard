@@ -27,10 +27,30 @@ interface TeamMember {
     role: string;
 }
 
+interface HintPurchase {
+    id: string;
+    hintId: string;
+    cost: number;
+    purchasedAt: string;
+    purchasedBy: {
+        id: string;
+        name: string | null;
+    };
+    hint: {
+        content: string;
+        challengeId: string;
+        challengeTitle: string;
+        theme: string;
+    };
+}
+
 interface TeamProfile {
     id: string;
     name: string;
     points: number;
+    calculatedPoints: number;
+    earnedFromSubmissions: number;
+    spentOnHints: number;
     leader: {
         id: string;
         name: string | null;
@@ -38,6 +58,7 @@ interface TeamProfile {
     };
     members: TeamMember[];
     solvedChallenges: SolvedChallenge[];
+    hintPurchases: HintPurchase[];
     categoryStats: Record<string, number>;
 }
 
@@ -123,8 +144,20 @@ export default function TeamProfilePage({ params }: { params: Promise<{ id: stri
 
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm font-bold font-mono items-center">
                                 <span className="bg-white border-2 border-black px-3 py-1 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                                    <span className="text-zinc-500 mr-2">TOTAL POINTS:</span>
+                                    <span className="text-zinc-500 mr-2">DB POINTS:</span>
                                     <span className="text-xl">{team.points}</span>
+                                </span>
+                                <span className="bg-white border-2 border-black px-3 py-1 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                    <span className="text-zinc-500 mr-2">CALC POINTS:</span>
+                                    <span className="text-xl">{team.calculatedPoints}</span>
+                                </span>
+                                <span className="bg-white border-2 border-black px-3 py-1 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs">
+                                    <span className="text-retro-green">+{team.earnedFromSubmissions}</span>
+                                    <span className="text-zinc-400 mx-1">earned</span>
+                                    {team.spentOnHints > 0 && (
+                                        <><span className="text-red-500">-{team.spentOnHints}</span>
+                                        <span className="text-zinc-400 ml-1">hints</span></>
+                                    )}
                                 </span>
                                 <span className="bg-white border-2 border-black px-3 py-1 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                     <span className="text-zinc-500 mr-2">MEMBERS:</span>
@@ -211,8 +244,8 @@ export default function TeamProfilePage({ params }: { params: Promise<{ id: stri
 
                         </div>
 
-                        {/* RIGHT COLUMN: Solved Log */}
-                        <div className="lg:col-span-2">
+                        {/* RIGHT COLUMN: Solved Log + Hint Purchases */}
+                        <div className="lg:col-span-2 space-y-8">
                             <div className="bg-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] min-h-[500px]">
                                 <h2 className="font-pixel text-lg mb-6 border-b-2 border-black pb-2 flex justify-between items-center">
                                     <span>CAPTURE_LOG</span>
@@ -253,6 +286,53 @@ export default function TeamProfilePage({ params }: { params: Promise<{ id: stri
                                                 </div>
                                                 <div className="col-span-2 text-right font-mono font-bold text-retro-green text-sm">
                                                     +{challenge.points}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* HINT PURCHASES */}
+                            <div className="bg-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                <h2 className="font-pixel text-lg mb-6 border-b-2 border-black pb-2 flex justify-between items-center">
+                                    <span>HINT_PURCHASES</span>
+                                    <span className="text-xs font-mono text-red-500">
+                                        {team.spentOnHints > 0 ? `-${team.spentOnHints} pts` : 'NONE'}
+                                    </span>
+                                </h2>
+
+                                {team.hintPurchases.length === 0 ? (
+                                    <div className="h-24 flex flex-col items-center justify-center text-zinc-400 font-mono text-sm border-2 border-dashed border-zinc-200 bg-zinc-50">
+                                        <span>NO_HINTS_PURCHASED</span>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-0">
+                                        <div className="grid grid-cols-12 gap-4 text-xs font-bold text-zinc-400 pb-2 px-2 border-b-2 border-black mb-2 uppercase">
+                                            <div className="col-span-4">Challenge</div>
+                                            <div className="col-span-4">Hint Content</div>
+                                            <div className="col-span-2 text-center">Bought By</div>
+                                            <div className="col-span-2 text-right">Cost</div>
+                                        </div>
+                                        {team.hintPurchases.map((hp, i) => (
+                                            <div key={hp.id} className={`grid grid-cols-12 gap-4 py-3 px-2 items-start hover:bg-zinc-50 transition-colors ${i !== team.hintPurchases.length - 1 ? 'border-b border-dashed border-zinc-300' : ''}`}>
+                                                <div className="col-span-4">
+                                                    <div className="font-bold font-mono text-sm truncate">{hp.hint.challengeTitle}</div>
+                                                    <div className="text-[10px] text-zinc-400 font-mono">
+                                                        {new Date(hp.purchasedAt).toLocaleDateString()} {new Date(hp.purchasedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                    <span className="font-mono text-[10px] bg-black text-white px-2 py-0.5 uppercase inline-block mt-1">{hp.hint.theme.substring(0, 4)}</span>
+                                                </div>
+                                                <div className="col-span-4">
+                                                    <p className="font-mono text-xs text-zinc-700 break-words">{hp.hint.content}</p>
+                                                </div>
+                                                <div className="col-span-2 text-center">
+                                                    <Link href={`/profile/${hp.purchasedBy.id}`} className="font-mono text-xs text-blue-600 hover:underline truncate inline-block max-w-full">
+                                                        {hp.purchasedBy.name || 'Unknown'}
+                                                    </Link>
+                                                </div>
+                                                <div className="col-span-2 text-right font-mono font-bold text-red-500 text-sm">
+                                                    -{hp.cost}
                                                 </div>
                                             </div>
                                         ))}

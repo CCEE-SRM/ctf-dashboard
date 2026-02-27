@@ -57,6 +57,31 @@ export async function GET(
                             }
                         }
                     }
+                },
+                hintPurchases: {
+                    orderBy: { createdAt: 'desc' },
+                    include: {
+                        hint: {
+                            select: {
+                                id: true,
+                                content: true,
+                                cost: true,
+                                challenge: {
+                                    select: {
+                                        id: true,
+                                        title: true,
+                                        theme: true
+                                    }
+                                }
+                            }
+                        },
+                        user: {
+                            select: {
+                                id: true,
+                                name: true
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -64,6 +89,11 @@ export async function GET(
         if (!team) {
             return NextResponse.json({ error: 'Team not found' }, { status: 404 });
         }
+
+        // Calculate points breakdown
+        const earnedFromSubmissions = team.submissions.reduce((sum, sub) => sum + sub.challenge.points, 0);
+        const spentOnHints = team.hintPurchases.reduce((sum, hp) => sum + hp.costAtPurchase, 0);
+        const calculatedPoints = earnedFromSubmissions - spentOnHints;
 
         // Calculate Category Stats
         const categoryStats: Record<string, number> = {};
@@ -77,6 +107,9 @@ export async function GET(
             id: team.id,
             name: team.name,
             points: team.points,
+            calculatedPoints,
+            earnedFromSubmissions,
+            spentOnHints,
             leader: team.leader,
             members: team.members.map(m => ({
                 id: m.id,
@@ -95,6 +128,22 @@ export async function GET(
                 solvedBy: {
                     id: sub.user.id,
                     name: sub.user.name
+                }
+            })),
+            hintPurchases: team.hintPurchases.map(hp => ({
+                id: hp.id,
+                hintId: hp.hintId,
+                cost: hp.costAtPurchase,
+                purchasedAt: hp.createdAt,
+                purchasedBy: {
+                    id: hp.user.id,
+                    name: hp.user.name
+                },
+                hint: {
+                    content: hp.hint.content,
+                    challengeId: hp.hint.challenge.id,
+                    challengeTitle: hp.hint.challenge.title,
+                    theme: hp.hint.challenge.theme?.name || 'Misc'
                 }
             })),
             categoryStats
