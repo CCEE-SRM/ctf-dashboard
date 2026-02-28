@@ -26,6 +26,15 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
             return NextResponse.json({ error: 'You must be in a team to submit flags.' }, { status: 403 });
         }
 
+        // Block submissions when event is not running
+        const { dynamicScoring, eventState } = await getConfig();
+        if (eventState !== 'START') {
+            return NextResponse.json(
+                { error: `Submissions are closed. The event is currently ${eventState === 'STOP' ? 'over' : 'paused'}.` },
+                { status: 403 }
+            );
+        }
+
         // 1. Check if already solved by User OR Team
         const existingSubmission = await prisma.submission.findFirst({
             where: {
@@ -72,12 +81,7 @@ export const POST = authenticated(async (req: AuthenticatedRequest) => {
             });
 
             // --- Scoring Logic ---
-            // Read Config
-            const { dynamicScoring, eventState } = await getConfig();
-
-            if (eventState !== 'START') {
-                return NextResponse.json({ error: `Competition is currently ${eventState}` }, { status: 403 });
-            }
+            // (eventState already validated above — event is START at this point)
 
             const initialPoints = challenge.initialPoints || challenge.points;
 

@@ -12,7 +12,6 @@ export async function GET() {
             return NextResponse.json({ error: 'Public access to leaderboard is disabled.' }, { status: 403 });
         }
 
-        // Fetch ALL teams to ensure 0-point teams are visible
         const allTeams = await prisma.team.findMany({
             include: {
                 leader: {
@@ -41,9 +40,6 @@ export async function GET() {
                     },
                     orderBy: { createdAt: 'asc' }
                 },
-                hintPurchases: {
-                    select: { costAtPurchase: true }
-                }
             }
         });
 
@@ -62,13 +58,10 @@ export async function GET() {
                 };
             });
 
-            const spentOnHints = team.hintPurchases.reduce((sum: number, hp: any) => sum + hp.costAtPurchase, 0);
-            const calculatedPoints = cumulativeScore - spentOnHints;
-
             return {
                 id: team.id,
                 name: team.name,
-                points: calculatedPoints,
+                points: team.points, // Use points field directly from team table
                 leader: team.leader,
                 members: team.members,
                 history,

@@ -90,11 +90,6 @@ export async function GET(
             return NextResponse.json({ error: 'Team not found' }, { status: 404 });
         }
 
-        // Calculate points breakdown
-        const earnedFromSubmissions = team.submissions.reduce((sum, sub) => sum + sub.challenge.points, 0);
-        const spentOnHints = team.hintPurchases.reduce((sum, hp) => sum + hp.costAtPurchase, 0);
-        const calculatedPoints = earnedFromSubmissions - spentOnHints;
-
         // Calculate Category Stats
         const categoryStats: Record<string, number> = {};
         team.submissions.forEach(sub => {
@@ -106,10 +101,7 @@ export async function GET(
         const teamProfile = {
             id: team.id,
             name: team.name,
-            points: team.points,
-            calculatedPoints,
-            earnedFromSubmissions,
-            spentOnHints,
+            points: team.points, // Use points field directly from team table
             leader: team.leader,
             members: team.members.map(m => ({
                 id: m.id,

@@ -1,11 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic'; // Ensure this isn't cached statically at build time
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        // Fetch ALL teams to ensure 0-point teams are visible
         const allTeams = await prisma.team.findMany({
             include: {
                 leader: {
@@ -34,13 +33,9 @@ export async function GET() {
                     },
                     orderBy: { createdAt: 'asc' }
                 },
-                hintPurchases: {
-                    select: { costAtPurchase: true }
-                }
             }
         });
 
-        // Map to the expected frontend structure
         const teams = allTeams.map((team: any) => {
             let cumulativeScore = 0;
             const categoryStats: Record<string, number> = {};
@@ -56,13 +51,10 @@ export async function GET() {
                 };
             });
 
-            const spentOnHints = team.hintPurchases.reduce((sum: number, hp: any) => sum + hp.costAtPurchase, 0);
-            const calculatedPoints = cumulativeScore - spentOnHints;
-
             return {
                 id: team.id,
                 name: team.name,
-                points: calculatedPoints,
+                points: team.points, // Use points field directly from team table
                 leader: team.leader,
                 members: team.members,
                 history,
@@ -78,16 +70,11 @@ export async function GET() {
             if (b.points !== a.points) {
                 return b.points - a.points;
             }
-            // If points are tied, the one who solved earlier is ranked higher
-            // Teams with 0 points will have lastSolveAt set to Epoch, so they will be at the bottom
             const timeA = new Date(a.lastSolveAt).getTime();
             const timeB = new Date(b.lastSolveAt).getTime();
-
-            // If both have 0 points and 0 solves, they stay relative to each other
             if (timeA === 0 && timeB === 0) return 0;
             if (timeA === 0) return 1;
             if (timeB === 0) return -1;
-
             return timeA - timeB;
         });
 

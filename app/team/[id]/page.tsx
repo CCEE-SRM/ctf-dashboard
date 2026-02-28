@@ -48,9 +48,6 @@ interface TeamProfile {
     id: string;
     name: string;
     points: number;
-    calculatedPoints: number;
-    earnedFromSubmissions: number;
-    spentOnHints: number;
     leader: {
         id: string;
         name: string | null;
@@ -144,20 +141,8 @@ export default function TeamProfilePage({ params }: { params: Promise<{ id: stri
 
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm font-bold font-mono items-center">
                                 <span className="bg-white border-2 border-black px-3 py-1 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                                    <span className="text-zinc-500 mr-2">DB POINTS:</span>
+                                    <span className="text-zinc-500 mr-2">POINTS:</span>
                                     <span className="text-xl">{team.points}</span>
-                                </span>
-                                <span className="bg-white border-2 border-black px-3 py-1 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                                    <span className="text-zinc-500 mr-2">CALC POINTS:</span>
-                                    <span className="text-xl">{team.calculatedPoints}</span>
-                                </span>
-                                <span className="bg-white border-2 border-black px-3 py-1 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs">
-                                    <span className="text-retro-green">+{team.earnedFromSubmissions}</span>
-                                    <span className="text-zinc-400 mx-1">earned</span>
-                                    {team.spentOnHints > 0 && (
-                                        <><span className="text-red-500">-{team.spentOnHints}</span>
-                                        <span className="text-zinc-400 ml-1">hints</span></>
-                                    )}
                                 </span>
                                 <span className="bg-white border-2 border-black px-3 py-1 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                     <span className="text-zinc-500 mr-2">MEMBERS:</span>
@@ -297,8 +282,8 @@ export default function TeamProfilePage({ params }: { params: Promise<{ id: stri
                             <div className="bg-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                                 <h2 className="font-pixel text-lg mb-6 border-b-2 border-black pb-2 flex justify-between items-center">
                                     <span>HINT_PURCHASES</span>
-                                    <span className="text-xs font-mono text-red-500">
-                                        {team.spentOnHints > 0 ? `-${team.spentOnHints} pts` : 'NONE'}
+                                    <span className="text-xs font-mono text-zinc-400">
+                                        {team.hintPurchases.length > 0 ? `${team.hintPurchases.length} hint(s)` : 'NONE'}
                                     </span>
                                 </h2>
 
