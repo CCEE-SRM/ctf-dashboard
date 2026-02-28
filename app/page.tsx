@@ -42,11 +42,13 @@ export default function Home() {
   }, []);
 
 
+  const isClosed = status.eventState === 'STOP';
+
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !isClosed) {
       router.push("/challenges");
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isClosed]);
 
   const handleRegister = async () => {
     if (!teamName) return;
@@ -58,7 +60,6 @@ export default function Home() {
     await signInWithGoogle({ mode: 'JOIN', teamCode });
   };
 
-  const isClosed = status.eventState === 'STOP';
 
   if (loading) {
     return <div className="min-h-screen bg-zinc-100 flex items-center justify-center font-pixel text-xl animate-pulse">BOOTING SYSTEM...</div>;
@@ -103,9 +104,6 @@ export default function Home() {
             {isClosed ? (
               /* Event is STOP — show only view buttons */
               <div className="flex flex-col items-center gap-6">
-                <div className="px-6 py-3 bg-red-100 border-2 border-red-400 text-red-700 font-pixel text-sm uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,0.15)]">
-                  ⛔ EVENT CLOSED — Registrations &amp; Logins Disabled
-                </div>
                 <div className="flex border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                   {status.publicChallenges && (
                     <Link
