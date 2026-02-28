@@ -42,7 +42,18 @@ interface Team {
     categoryStats?: Record<string, number>;
 }
 
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = [
+    '#6366f1', // indigo
+    '#f59e0b', // amber
+    '#10b981', // emerald
+    '#ef4444', // red
+    '#3b82f6', // blue
+    '#ec4899', // pink
+    '#14b8a6', // teal
+    '#f97316', // orange
+    '#8b5cf6', // violet
+    '#84cc16', // lime
+];
 
 import RetroLayout from "@/components/RetroLayout";
 import { useAuth } from "@/context/AuthContext";
@@ -161,10 +172,16 @@ export default function LeaderboardPage() {
                                                 {index + 1}
                                             </div>
                                             <div className="col-span-6 p-2 border-r border-zinc-200 truncate pl-4 flex items-center justify-between group/name">
-                                                <Link href={`/team/${team.id}`} className="hover:underline hover:text-blue-600 decoration-2 underline-offset-2 z-20 relative pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                                                    {team.name}
-                                                </Link>
-                                                {isSelected && <span className="block text-[10px] opacity-70">▼ EXPANDED</span>}
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span
+                                                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                                                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                                    />
+                                                    <Link href={`/team/${team.id}`} className="hover:underline hover:text-blue-600 decoration-2 underline-offset-2 z-20 relative pointer-events-auto truncate" onClick={(e) => e.stopPropagation()}>
+                                                        {team.name}
+                                                    </Link>
+                                                </div>
+                                                {isSelected && <span className="block text-[10px] opacity-70 shrink-0">▼ EXPANDED</span>}
                                             </div>
                                             <div className="col-span-2 p-2 border-r border-zinc-200 text-center">
                                                 {team.history.length}
@@ -248,24 +265,33 @@ export default function LeaderboardPage() {
                                         />
                                         <Tooltip
                                             labelFormatter={(value) => new Date(value).toLocaleString()}
-                                            contentStyle={{ backgroundColor: '#fff', border: '2px solid #000', fontFamily: 'monospace' }}
+                                            contentStyle={{ backgroundColor: '#fff', border: '2px solid #000', fontFamily: 'monospace', fontSize: 11 }}
+                                        />
+                                        <Legend
+                                            wrapperStyle={{ fontFamily: 'monospace', fontSize: 10, paddingTop: 8 }}
+                                            formatter={(value) => <span style={{ color: '#111' }}>{value}</span>}
                                         />
                                         {teams
                                             .filter(team => visibleTeamIds.includes(team.id))
                                             .map((team, index) => {
+                                                const teamIndex = teams.findIndex(t => t.id === team.id);
+                                                const color = COLORS[teamIndex % COLORS.length];
                                                 const isSelected = selectedTeamId === team.id;
                                                 return (
                                                     <Line
                                                         key={team.id}
                                                         data={team.history.map(h => ({ ...h, time: new Date(h.time).getTime() }))}
-                                                        type="stepAfter" // Retro style step chart
+                                                        type="stepAfter"
                                                         dataKey="score"
                                                         name={team.name}
-                                                        stroke={isSelected ? '#8b5cf6' : '#555'}
-                                                        strokeWidth={isSelected ? 3 : 1}
-                                                        dot={isSelected ? { r: 4, fill: '#8b5cf6', stroke: '#fff' } : false}
-                                                        activeDot={{ r: 6, stroke: '#000', strokeWidth: 2 }}
-                                                        opacity={isSelected ? 1 : 0.3} // Fade stats for non-selected
+                                                        stroke={color}
+                                                        strokeWidth={isSelected ? 3 : 1.5}
+                                                        dot={isSelected
+                                                            ? { r: 4, fill: color, stroke: '#fff', strokeWidth: 2 }
+                                                            : false
+                                                        }
+                                                        activeDot={{ r: 6, stroke: '#000', strokeWidth: 2, fill: color }}
+                                                        opacity={isSelected ? 1 : 0.6}
                                                         animationDuration={500}
                                                     />
                                                 );

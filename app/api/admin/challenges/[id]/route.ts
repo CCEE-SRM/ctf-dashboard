@@ -1,5 +1,6 @@
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { staffOnly } from '@/lib/auth-middleware';
 import { AuthenticatedRequest } from '@/types/auth';
 import { NextResponse } from 'next/server';
@@ -28,7 +29,7 @@ export const PUT = staffOnly(async (req: AuthenticatedRequest, { params }: { par
             return NextResponse.json({ error: 'Forbidden: You can only edit your own challenges' }, { status: 403 });
         }
 
-        const updatedChallenge = await prisma.$transaction(async (tx) => {
+        const updatedChallenge = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             // Updated basic fields
             const c = await tx.challenge.update({
                 where: { id: challengeId },
@@ -123,7 +124,7 @@ export const DELETE = staffOnly(async (req: AuthenticatedRequest, { params }: { 
         }
 
         // 1. Transaction to cleanup everything safely
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             // A. Refund Hint Purchases
             const purchases = await tx.hintPurchase.findMany({
                 where: { hint: { challengeId } }
