@@ -45,7 +45,6 @@ interface Team {
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 import RetroLayout from "@/components/RetroLayout";
-import { useTriggerStream } from "@/hooks/useTriggerStream";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LeaderboardPage() {
@@ -91,13 +90,7 @@ export default function LeaderboardPage() {
         }
     }, [token, authLoading]);
 
-    // Real-time updates
-    useTriggerStream((data) => {
-        if (data.leaderboard) {
-            console.log('[SSE] Refreshing leaderboard...');
-            fetchLeaderboard();
-        }
-    });
+
 
     if (loading) {
         return <div className="min-h-screen bg-retro-bg flex items-center justify-center font-pixel text-xl">LOADING...</div>;

@@ -130,8 +130,8 @@ export default function AdminMaintenancePage() {
                                     onClick={handleReset}
                                     disabled={isResetting || confirmText !== "RESET"}
                                     className={`w-full py-4 font-pixel text-xl uppercase transition-all border-4 ${confirmText === "RESET"
-                                            ? "bg-red-600 border-black text-white hover:bg-red-700 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
-                                            : "bg-zinc-800 border-zinc-900 text-zinc-600 cursor-not-allowed"
+                                        ? "bg-red-600 border-black text-white hover:bg-red-700 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
+                                        : "bg-zinc-800 border-zinc-900 text-zinc-600 cursor-not-allowed"
                                         }`}
                                 >
                                     {isResetting ? "EXECUTING PURGE..." : "AUTHORIZE SYSTEM WIPE"}
@@ -152,7 +152,6 @@ export default function AdminMaintenancePage() {
                             <h3 className="font-pixel text-xs text-zinc-500 mb-2 uppercase">Network Status</h3>
                             <div className="font-mono text-sm text-green-500/80">
                                 DB_LATENCY: 12ms<br />
-                                REDIS_UPLINK: ONLINE<br />
                                 ACTIVE_THREADS: 4
                             </div>
                         </div>

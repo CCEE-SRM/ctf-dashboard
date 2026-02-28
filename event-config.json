@@ -1,0 +1,11 @@
+{
+    "eventState": "STOP",
+    "publicChallenges": true,
+    "publicLeaderboard": true,
+    "dynamicScoring": false,
+    "rateLimit": {
+        "maxAttempts": 3,
+        "windowSeconds": 30,
+        "cooldownSeconds": 60
+    }
+}

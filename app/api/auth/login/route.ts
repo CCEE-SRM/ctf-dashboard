@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { signJwt } from '@/lib/jwt';
 import { NextResponse } from 'next/server';
 import { Role } from '@prisma/client';
+import { getConfig } from '@/lib/config';
 
 export async function POST(request: Request) {
     try {
@@ -21,6 +22,15 @@ export async function POST(request: Request) {
         // Parse Body for extra params
         const body = await request.json().catch(() => ({}));
         const { mode, teamName, teamCode } = body;
+
+        // Check event state — block new registrations/joins when event is STOP
+        const config = await getConfig();
+        if (config.eventState === 'STOP' && (mode === 'REGISTER' || mode === 'JOIN')) {
+            return NextResponse.json(
+                { error: 'Registration is closed. The event has ended.' },
+                { status: 403 }
+            );
+        }
 
         // 1. Verify Token via Google Identity Toolkit REST API
         const googleRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {

@@ -13,7 +13,11 @@ export default function Home() {
   const [mode, setMode] = useState<"HOME" | "REGISTER" | "JOIN">("HOME");
   const [teamName, setTeamName] = useState("");
   const [teamCode, setTeamCode] = useState("");
-  const [status, setStatus] = useState({
+  const [status, setStatus] = useState<{
+    eventState: 'START' | 'PAUSE' | 'STOP';
+    publicChallenges: boolean;
+    publicLeaderboard: boolean;
+  }>({
     eventState: 'START',
     publicChallenges: true,
     publicLeaderboard: true
@@ -54,6 +58,8 @@ export default function Home() {
     await signInWithGoogle({ mode: 'JOIN', teamCode });
   };
 
+  const isClosed = status.eventState === 'STOP';
+
   if (loading) {
     return <div className="min-h-screen bg-zinc-100 flex items-center justify-center font-pixel text-xl animate-pulse">BOOTING SYSTEM...</div>;
   }
@@ -76,7 +82,6 @@ export default function Home() {
       {/* Main Center Content */}
       <div className="relative min-h-screen flex flex-col items-center justify-center z-20">
 
-
         {mode === 'HOME' && (
           <div className="text-center animate-in fade-in zoom-in duration-500">
             {/* Logo */}
@@ -95,44 +100,73 @@ export default function Home() {
               Capture<br />The Flag
             </h1>
 
-            <div className="flex border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-              <button
-                onClick={() => setMode('REGISTER')}
-                className="px-8 py-4 border-r-2 border-black font-mono font-bold hover:bg-zinc-100 hover:text-retro-green transition-colors text-lg"
-              >
-                Register<br />Team
-              </button>
-              <button
-                onClick={() => setMode('JOIN')}
-                className="px-8 py-4 border-r-2 border-black font-mono font-bold hover:bg-zinc-100 hover:text-retro-green transition-colors text-lg"
-              >
-                Join<br />Team
-              </button>
-              <button
-                onClick={() => signInWithGoogle()} // Regular login if already registered
-                className="px-8 py-4 border-r-2 border-black font-mono font-bold hover:bg-zinc-100 hover:text-retro-green transition-colors flex items-center gap-2 text-lg"
-              >
-                Login
-              </button>
-              <div className="flex flex-col">
-                {status.publicChallenges && (
-                  <Link
-                    href="/challenges"
-                    className="px-6 py-2 border-b border-black font-mono font-bold hover:bg-zinc-100 hover:text-purple-600 transition-colors text-sm text-center"
-                  >
-                    View Challenges
-                  </Link>
-                )}
-                {status.publicLeaderboard && (
-                  <Link
-                    href="/leaderboard"
-                    className="px-6 py-2 font-mono font-bold hover:bg-zinc-100 hover:text-purple-600 transition-colors text-sm text-center"
-                  >
-                    Scoreboard
-                  </Link>
-                )}
+            {isClosed ? (
+              /* Event is STOP — show only view buttons */
+              <div className="flex flex-col items-center gap-6">
+                <div className="px-6 py-3 bg-red-100 border-2 border-red-400 text-red-700 font-pixel text-sm uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,0.15)]">
+                  ⛔ EVENT CLOSED — Registrations &amp; Logins Disabled
+                </div>
+                <div className="flex border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                  {status.publicChallenges && (
+                    <Link
+                      href="/challenges"
+                      className="px-8 py-4 border-r-2 border-black font-mono font-bold hover:bg-zinc-100 hover:text-purple-600 transition-colors text-lg"
+                    >
+                      View<br />Challenges
+                    </Link>
+                  )}
+                  {status.publicLeaderboard && (
+                    <Link
+                      href="/leaderboard"
+                      className="px-8 py-4 font-mono font-bold hover:bg-zinc-100 hover:text-purple-600 transition-colors text-lg"
+                    >
+                      View<br />Scoreboard
+                    </Link>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              /* Event is START or PAUSE — show full button bar */
+              <div className="flex border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                <button
+                  onClick={() => setMode('REGISTER')}
+                  className="px-8 py-4 border-r-2 border-black font-mono font-bold hover:bg-zinc-100 hover:text-retro-green transition-colors text-lg"
+                >
+                  Register<br />Team
+                </button>
+                <button
+                  onClick={() => setMode('JOIN')}
+                  className="px-8 py-4 border-r-2 border-black font-mono font-bold hover:bg-zinc-100 hover:text-retro-green transition-colors text-lg"
+                >
+                  Join<br />Team
+                </button>
+                <button
+                  onClick={() => signInWithGoogle()} // Regular login if already registered
+                  className="px-8 py-4 border-r-2 border-black font-mono font-bold hover:bg-zinc-100 hover:text-retro-green transition-colors flex items-center gap-2 text-lg"
+                >
+                  Login
+                </button>
+                <div className="flex flex-col">
+                  {status.publicChallenges && (
+                    <Link
+                      href="/challenges"
+                      className="px-6 py-2 border-b border-black font-mono font-bold hover:bg-zinc-100 hover:text-purple-600 transition-colors text-sm text-center"
+                    >
+                      View Challenges
+                    </Link>
+                  )}
+                  {status.publicLeaderboard && (
+                    <Link
+                      href="/leaderboard"
+                      className="px-6 py-2 font-mono font-bold hover:bg-zinc-100 hover:text-purple-600 transition-colors text-sm text-center"
+                    >
+                      Scoreboard
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="mt-8 p-4 bg-red-100 border-2 border-red-500 text-red-800 font-bold max-w-md mx-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
                 ! ERROR: {error}
@@ -141,7 +175,7 @@ export default function Home() {
           </div>
         )}
 
-        {mode === 'REGISTER' && (
+        {!isClosed && mode === 'REGISTER' && (
           <div className="w-full max-w-md bg-white border-2 border-black p-1 shadow-[16px_16px_0px_0px_rgba(0,0,0,0.1)] animate-in fade-in slide-in-from-bottom-10 duration-300">
             <div className="border border-zinc-300 p-8 relative">
               {/* Window Controls */}
@@ -190,7 +224,7 @@ export default function Home() {
           </div>
         )}
 
-        {mode === 'JOIN' && (
+        {!isClosed && mode === 'JOIN' && (
           <div className="w-full max-w-md bg-white border-2 border-black p-1 shadow-[16px_16px_0px_0px_rgba(0,0,0,0.1)] animate-in fade-in slide-in-from-bottom-10 duration-300">
             <div className="border border-zinc-300 p-8 relative">
               {/* Window Controls */}

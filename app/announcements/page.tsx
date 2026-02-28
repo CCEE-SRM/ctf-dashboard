@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import { useTriggerStream } from "@/hooks/useTriggerStream";
+
 
 interface Announcement {
     id: string;
@@ -38,13 +38,7 @@ export default function AnnouncementsPage() {
         fetchAnnouncements();
     }, []);
 
-    // Real-time updates
-    useTriggerStream((data) => {
-        if (data.announcements) {
-            console.log('[SSE] Refreshing announcements...');
-            fetchAnnouncements();
-        }
-    });
+
 
     return (
         <div className="min-h-screen bg-zinc-50 text-black font-mono-retro overflow-hidden relative selection:bg-retro-green selection:text-black">

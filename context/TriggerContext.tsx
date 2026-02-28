@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useCallback } from 'react';
 
 type TriggerData = {
     announcements?: boolean;
@@ -9,11 +9,13 @@ type TriggerData = {
     status?: boolean;
 };
 
-type TriggerContextType = {
-    // We can add state or functions here if needed
-};
+type TriggerContextType = Record<string, never>;
 
 const TriggerContext = createContext<TriggerContextType | undefined>(undefined);
+
+// Internal context keeps the subscribe API so existing hook callers don't break,
+// but no SSE connection is made — the callback will simply never fire.
+const InternalTriggerContext = createContext<{ subscribe: (cb: (data: TriggerData) => void) => () => void } | undefined>(undefined);
 
 export const TriggerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const listeners = useRef<Set<(data: TriggerData) => void>>(new Set());
@@ -23,28 +25,8 @@ export const TriggerProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return () => listeners.current.delete(callback);
     }, []);
 
-    useEffect(() => {
-        const eventSource = new EventSource('/api/trigger-stream');
-
-        eventSource.onmessage = (event) => {
-            try {
-                const data: TriggerData = JSON.parse(event.data);
-                console.log('[SSE Context] Broadcast Trigger:', data);
-                listeners.current.forEach(listener => listener(data));
-            } catch (err) {
-                console.error('[SSE Context] Parse Error:', err);
-            }
-        };
-
-        eventSource.onerror = (err) => {
-            console.error('[SSE Context] Connection Error:', err);
-        };
-
-        return () => {
-            console.log('[SSE Context] Closing connection');
-            eventSource.close();
-        };
-    }, []);
+    // SSE connection removed — Redis has been removed from the project.
+    // Real-time updates are no longer needed; pages fetch on mount instead.
 
     return (
         <TriggerContext.Provider value={{}}>
@@ -54,9 +36,6 @@ export const TriggerProvider: React.FC<{ children: React.ReactNode }> = ({ child
         </TriggerContext.Provider>
     );
 };
-
-// Internal context to avoid exposing subscribe to everyone if not needed
-const InternalTriggerContext = createContext<{ subscribe: (cb: (data: TriggerData) => void) => () => void } | undefined>(undefined);
 
 export const useTriggerSubscription = (onTrigger: (data: TriggerData) => void) => {
     const ctx = useContext(InternalTriggerContext);

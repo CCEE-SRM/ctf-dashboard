@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 
-import { useTriggerStream } from "@/hooks/useTriggerStream";
 import { NotificationToast } from "./NotificationToast";
 
 interface RetroLayoutProps {
@@ -57,19 +56,7 @@ export default function RetroLayout({ children, title, activePage }: RetroLayout
         fetchStatus();
     }, [token]);
 
-    // Real-time updates for Global Stats & HUD
-    useTriggerStream((data) => {
-        // Always refresh status/stats on any relevant trigger
-        if (data.status || data.leaderboard || data.announcements) {
-            console.log('[RetroLayout] HUD Trigger Refresh');
-            fetchStatus();
-        }
 
-        // Show popup for new announcements
-        if (data.announcements) {
-            setNotification("New system update broadcasted. Check announcements!");
-        }
-    });
 
     return (
         <div className="flex h-screen overflow-hidden bg-retro-bg text-black font-mono-retro">

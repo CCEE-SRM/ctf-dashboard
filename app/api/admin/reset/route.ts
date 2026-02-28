@@ -22,7 +22,6 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
             console.log('[RESET] Leaderboard cleared');
 
             // 4. Delete Teams
-            // Note: This might break User.teamId but won't delete users yet
             await tx.team.deleteMany({});
             console.log('[RESET] Teams cleared');
 
@@ -42,6 +41,8 @@ export const POST = adminOnly(async (req: AuthenticatedRequest) => {
             });
             console.log('[RESET] Staff points reset');
         });
+
+        console.log('[RESET] System reset complete.');
 
         return NextResponse.json({
             success: true,

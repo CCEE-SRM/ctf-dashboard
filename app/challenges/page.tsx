@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import RetroLayout from "@/components/RetroLayout";
-import { useTriggerStream } from "@/hooks/useTriggerStream";
 
 interface Challenge {
     id: string;
@@ -97,17 +96,7 @@ export default function ChallengesPage() {
         }
     }, [token, authLoading]);
 
-    // Real-time updates
-    useTriggerStream((data) => {
-        if (data.status) {
-            console.log('[SSE] Refreshing status...');
-            fetchStatus();
-        }
-        if (data.challenges) {
-            console.log('[SSE] Refreshing challenges...');
-            fetchChallengesList();
-        }
-    });
+
 
     useEffect(() => {
         if (!cooldownUntil) return;
